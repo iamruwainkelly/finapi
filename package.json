@@ -23,6 +23,8 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "cheerio": "^1.0.0",
+    "playwright": "^1.52.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "yahoo-finance2": "^2.13.3"
