@@ -21122,6 +21122,9 @@
       // Access specific data, for example, pageProps
       const pageProps = jsonData.props.pageProps.state.quotesStore.quotes;
 
+      let losers = [];
+      let gainers = [];
+
       // loop through array
       for (let i = 0; i < pageProps.length; i++) {
         const prop = pageProps[i];
@@ -21132,11 +21135,27 @@
 
           switch (typeof item) {
             case 'string':
-              console.log('String:', item); // log the string
+              //console.log('String:', item); // log the string
+
+              // if item string ends with 'stocks.gainersLosers'
+              if (item.endsWith('stocks.gainersLosers')) {
+                // check that item starts with 'indexLosers'
+                if (item.startsWith('indexLosers')) {
+                  // get the next item in the array
+                  losers = prop[1]._collection;
+                } else if (item.startsWith('indexGainers')) {
+                  // get the next item in the array
+                  gainers = prop[1]._collection;
+                }
+              }
+
               break;
           }
         }
       }
+
+      console.log('Losers:', losers); // log the losers array
+      console.log('Gainers:', gainers); // log the gainers array
 
       console.log(pageProps);
     </script>
