@@ -1,0 +1,118 @@
+[
+  "indexLosers-175-stocks.gainersLosers",
+  {
+    "_collection": [
+      {
+        "mobx_easy_id": "_crri6r8zy",
+        "month": "",
+        "instrumentId": 662,
+        "flag": { "name": "Munich Re Group", "code": "DE" },
+        "name": {
+          "label": "Munich Re Group",
+          "title": "Munich Reinsurance",
+          "derived": true,
+          "url": "/equities/muench.-rueck"
+        },
+        "precision": { "change": 2, "changePercent": 2 },
+        "symbol": "MUVGn",
+        "exchange": "Xetra",
+        "volume": "623465",
+        "last": "579.20",
+        "change": "-22.40",
+        "changePercent": "-3.72",
+        "changeDirection": "Down",
+        "avgVolume": "308099",
+        "_liveVolume": 623465
+      },
+      {
+        "mobx_easy_id": "_crri6r8zy",
+        "month": "",
+        "instrumentId": 463,
+        "flag": { "name": "Iberdrola", "code": "ES" },
+        "name": {
+          "label": "Iberdrola",
+          "title": "Iberdrola",
+          "derived": true,
+          "url": "/equities/iberdrola"
+        },
+        "precision": { "change": 3, "changePercent": 2 },
+        "symbol": "IBE",
+        "exchange": "Madrid",
+        "volume": "2608",
+        "last": "15.79",
+        "change": "-0.105",
+        "changePercent": "-0.66",
+        "changeDirection": "Down",
+        "avgVolume": "4648895",
+        "_liveVolume": 2608
+      },
+      {
+        "mobx_easy_id": "_crri6r8zy",
+        "month": "",
+        "instrumentId": 416,
+        "flag": { "name": "TotalEnergies SE", "code": "FR" },
+        "name": {
+          "label": "TotalEnergies SE",
+          "title": "TotalEnergies SE",
+          "derived": false,
+          "url": "/equities/total"
+        },
+        "precision": { "change": 2, "changePercent": 2 },
+        "symbol": "TTEF",
+        "exchange": "Paris",
+        "volume": "6583901",
+        "last": "50.86",
+        "change": "-0.30",
+        "changePercent": "-0.59",
+        "changeDirection": "Down",
+        "avgVolume": "5071909",
+        "_liveVolume": 6583901
+      },
+      {
+        "mobx_easy_id": "_crri6r8zy",
+        "month": "",
+        "instrumentId": 345,
+        "flag": { "name": "BASF", "code": "DE" },
+        "name": {
+          "label": "BASF",
+          "title": "BASF SE NA O.N.",
+          "derived": true,
+          "url": "/equities/basf-ag"
+        },
+        "precision": { "change": 3, "changePercent": 2 },
+        "symbol": "BASFN",
+        "exchange": "Xetra",
+        "volume": "5518533",
+        "last": "44.39",
+        "change": "-0.240",
+        "changePercent": "-0.54",
+        "changeDirection": "Down",
+        "avgVolume": "3763830",
+        "_liveVolume": 5518533
+      },
+      {
+        "mobx_easy_id": "_crri6r8zy",
+        "month": "",
+        "instrumentId": 6974,
+        "flag": { "name": "Eni SpA", "code": "IT" },
+        "name": {
+          "label": "Eni SpA",
+          "title": "Eni SpA",
+          "derived": false,
+          "url": "/equities/eni"
+        },
+        "precision": { "change": 3, "changePercent": 2 },
+        "symbol": "ENI",
+        "exchange": "Milan",
+        "volume": "14493640",
+        "last": "12.656",
+        "change": "-0.044",
+        "changePercent": "-0.35",
+        "changeDirection": "Down",
+        "avgVolume": "15110529",
+        "_liveVolume": 14493640
+      }
+    ],
+    "mobx_easy_id": "_crri6r8zy"
+  }
+]
