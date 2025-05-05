@@ -1,10 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { AppService } from './app.service';
-import yahooFinance from 'yahoo-finance2';
-import { chromium, LaunchOptions } from 'playwright';
-import * as cheerio from 'cheerio';
-import * as fs from 'node:fs';
-import { ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { Controller, Get, Param, Query, UseInterceptors } from "@nestjs/common";
+import { AppService } from "./app.service";
+import yahooFinance from "yahoo-finance2";
+import { chromium, LaunchOptions } from "playwright";
+import * as cheerio from "cheerio";
+import * as fs from "node:fs";
+import { ApiExcludeController, ApiExcludeEndpoint } from "@nestjs/swagger";
+import { CacheInterceptor, CacheModule } from "@nestjs/cache-manager";
 
 interface YahooHistoric {
   adjClose?: number | undefined;
@@ -53,21 +54,21 @@ const calculateHistoricChangeByDate = (
       close: result.close,
       volume: result.volume,
       dateTicks: new Date(result.date).getTime() / 1000,
-      dateString: new Date(result.date).toISOString().split('T')[0],
+      dateString: new Date(result.date).toISOString().split("T")[0],
     };
   });
 
-  console.log('date', date);
+  console.log("date", date);
 
   // declare todays date
   const today = new Date();
 
   // find an entry in newResults, where the datestring is equal to dtString
   let lookupEntry = historic.find(
-    (result) => result.dateString === date.toISOString().split('T')[0],
+    (result) => result.dateString === date.toISOString().split("T")[0],
   );
 
-  console.log('date-lookup1.1', lookupEntry);
+  console.log("date-lookup1.1", lookupEntry);
 
   // if the entry is not found, starting from the end of the array, find the first entry where the dateTicks is less than dt
   if (!lookupEntry) {
@@ -79,7 +80,7 @@ const calculateHistoricChangeByDate = (
     }
   }
 
-  console.log('date-lookup1.2', lookupEntry);
+  console.log("date-lookup1.2", lookupEntry);
 
   // get the last entry in the array
   const lastEntry = historic[historic.length - 1];
@@ -94,30 +95,30 @@ const calculateHistoricChangeByDate = (
 };
 
 const baseUrls = {
-  investing: 'https://za.investing.com/indices/',
-  yahooFinance: 'https://finance.yahoo.com/',
+  investing: "https://za.investing.com/indices/",
+  yahooFinance: "https://finance.yahoo.com/",
 };
 
 const indexes = [
   {
-    yahooFinanceSymbol: '^GSPC',
-    investingSymbol: 'SPX',
-    investingUrlName: 'us-spx-500',
+    yahooFinanceSymbol: "^GSPC",
+    investingSymbol: "SPX",
+    investingUrlName: "us-spx-500",
   },
   {
-    yahooFinanceSymbol: '^IXIC',
-    investingSymbol: 'IXIC',
-    investingUrlName: 'nasdaq-composite',
+    yahooFinanceSymbol: "^IXIC",
+    investingSymbol: "IXIC",
+    investingUrlName: "nasdaq-composite",
   },
   {
-    yahooFinanceSymbol: '^STOXX50E',
-    investingSymbol: 'STOXX50E',
-    investingUrlName: 'eu-stoxx50',
+    yahooFinanceSymbol: "^STOXX50E",
+    investingSymbol: "STOXX50E",
+    investingUrlName: "eu-stoxx50",
   },
   {
-    yahooFinanceSymbol: '^SSMI',
-    investingSymbol: 'SMI',
-    investingUrlName: 'switzerland-20',
+    yahooFinanceSymbol: "^SSMI",
+    investingSymbol: "SMI",
+    investingUrlName: "switzerland-20",
   },
 ];
 
@@ -127,20 +128,20 @@ const options: LaunchOptions = {
   slowMo: 100,
   // set some args to make playwright behave more like a real browser
   args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process',
-    '--allow-insecure-localhost',
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-web-security",
+    "--disable-features=IsolateOrigins,site-per-process",
+    "--allow-insecure-localhost",
   ],
-  ignoreDefaultArgs: ['--enable-automation'],
+  ignoreDefaultArgs: ["--enable-automation"],
 };
 
 // create an array of user agents
 const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
 ];
 
 const contextOptions = {
@@ -149,19 +150,19 @@ const contextOptions = {
   deviceScaleFactor: 1,
 };
 
-@Controller('api/')
+@Controller("api/")
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @ApiExcludeEndpoint()
-  @Get('/')
+  @Get("/")
   get(): string {
     return this.appService.getHello();
   }
 
-  @Get('quote/:symbol')
+  @Get("quote/:symbol")
   async quote(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+    console.log("symbol", params.symbol);
 
     const results = await yahooFinance.quote(params.symbol);
 
@@ -170,9 +171,9 @@ export class AppController {
     return results;
   }
 
-  @Get('gainers/:symbol')
+  @Get("gainers/:symbol")
   async gainers(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+    console.log("symbol", params.symbol);
 
     const results = await yahooFinance.dailyGainers(params.symbol);
 
@@ -181,27 +182,27 @@ export class AppController {
     return results;
   }
 
-  @Get('quotes')
-  async quotes(@Query('symbols') symbols: string): Promise<object> {
-    const symbolArray = symbols.split(',');
+  @Get("quotes")
+  async quotes(@Query("symbols") symbols: string): Promise<object> {
+    const symbolArray = symbols.split(",");
 
     const results = await yahooFinance.quote(symbolArray, {
       fields: [
-        'symbol',
-        'longName',
-        'regularMarketPrice',
-        'regularMarketChange',
-        'regularMarketChangePercent',
-        'regularMarketDayRange',
+        "symbol",
+        "longName",
+        "regularMarketPrice",
+        "regularMarketChange",
+        "regularMarketChangePercent",
+        "regularMarketDayRange",
       ],
     });
 
     return results;
   }
 
-  @Get('historical/:symbol')
+  @Get("historical/:symbol")
   async historical(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+    console.log("symbol", params.symbol);
 
     // declare a date today
     const today = new Date();
@@ -252,7 +253,7 @@ export class AppController {
     threeMonthsAgo.setMonth(today.getMonth() - 3);
     //threeMonthsAgo.setDate(today.getDate() - 90);
 
-    console.log('threeMonthsAgo', threeMonthsAgo);
+    console.log("threeMonthsAgo", threeMonthsAgo);
 
     // calculate the change between the last entry and the entry three months ago
     const threeMonthChange = calculateHistoricChangeByDate(
@@ -282,9 +283,9 @@ export class AppController {
   }
 
   // quoteSummary
-  @Get('quote-summary/:symbol')
+  @Get("quote-summary/:symbol")
   async quoteSummary(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+    console.log("symbol", params.symbol);
 
     // const results = await yahooFinance.quoteSummary(params.symbol, {
     //   modules: ['financialData', 'summaryDetail'],
@@ -296,22 +297,22 @@ export class AppController {
     return results;
   }
 
-  @Get('search/:symbol')
+  @Get("search/:symbol")
   async search(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+    console.log("symbol", params.symbol);
 
     const results = await yahooFinance.search(params.symbol);
 
     return results;
   }
 
-  @Get('market-movers/:index')
+  @Get("market-movers/:index")
   async marketwatch(@Param() params: any): Promise<object> {
     // throw an error if they did not prefix the index with ^
-    if (!params.index.startsWith('^')) {
+    if (!params.index.startsWith("^")) {
       return {
         error:
-          'Index should be prefixed with ^. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index should be prefixed with ^. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -323,7 +324,7 @@ export class AppController {
     if (!index) {
       return {
         error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -334,7 +335,7 @@ export class AppController {
     const context = await browser.newContext(contextOptions);
 
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     const content = await page.content();
     await browser.close();
 
@@ -344,13 +345,13 @@ export class AppController {
     const gainersTable = $('[data-test="gainers-table"] tbody tr');
     const gainers = gainersTable
       .map((_, row) => {
-        const cells = $(row).find('td');
+        const cells = $(row).find("td");
         return {
           name: $(cells[0])
             .find('[data-test="gainers-losers-label"]')
             .text()
             .trim(),
-          symbol: $(cells[0]).find('span.font-semibold').text().trim(),
+          symbol: $(cells[0]).find("span.font-semibold").text().trim(),
           price: $(cells[1])
             .find('[data-test="gainers-losers-last"]')
             .text()
@@ -371,13 +372,13 @@ export class AppController {
     const losersTable = $('[data-test="losers-table"] tbody tr');
     const losers = losersTable
       .map((_, row) => {
-        const cells = $(row).find('td');
+        const cells = $(row).find("td");
         return {
           name: $(cells[0])
             .find('[data-test="gainers-losers-label"]')
             .text()
             .trim(),
-          symbol: $(cells[0]).find('span.font-semibold').text().trim(),
+          symbol: $(cells[0]).find("span.font-semibold").text().trim(),
           price: $(cells[1])
             .find('[data-test="gainers-losers-last"]')
             .text()
@@ -399,7 +400,7 @@ export class AppController {
 
   // route for scra[ping a url
   @ApiExcludeEndpoint()
-  @Get('scrape')
+  @Get("scrape")
   async scrape(): Promise<object> {
     const url =
       // 'https://markets.businessinsider.com/index/market-movers/s&p_500';
@@ -407,26 +408,37 @@ export class AppController {
       // https://www.barrons.com/market-data/indexes/sx5e?countrycode=xx
       //'https://www.barrons.com/market-data/indexes/sx5e?countrycode=xx';
       //'https://www.wsj.com/market-data/quotes/index/CH/XSWX/SMI';
-      'https://www.investing.com/indices/eu-stoxx50';
+      "https://www.investing.com/indices/eu-stoxx50";
     const browser = await chromium.launch(options);
     const context = await browser.newContext(contextOptions);
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     const content = await page.content();
     await browser.close();
 
     // save the content to a file
-    fs.writeFileSync('investing-stoxx50.html', content);
+    fs.writeFileSync("investing-stoxx50.html", content);
 
     // load the content into cheerio
     const $ = cheerio.load(content);
 
     // extract json from script id="__NEXT_DATA__" tag
-    const json = $('#__NEXT_DATA__').text();
+    const json = $("#__NEXT_DATA__").text();
     // parse the json and get the data from the props object
     const data = JSON.parse(json);
 
     return { content };
+  }
+
+  // route for scra[ping a url
+  @UseInterceptors(CacheInterceptor)
+  @ApiExcludeEndpoint()
+  @Get("test")
+  async test(): Promise<object> {
+    // simulate waiting for 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    return { hello: "world" };
   }
 }
 
