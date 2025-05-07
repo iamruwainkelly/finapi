@@ -543,7 +543,8 @@ export class AppController {
   @ApiExcludeEndpoint()
   @Get('scrape')
   async scrape(): Promise<object> {
-    const url = 'https://www.investing.com/indices/eu-stoxx50';
+    const url =
+      'https://superbalist.com/browse/men/shoes/sneakers?max_price=2000&page=3';
     const browser = await chromium.launch(options);
     const context = await browser.newContext(contextOptions);
     const page = await context.newPage();
@@ -552,57 +553,7 @@ export class AppController {
     await browser.close();
 
     // save the content to a file
-    fs.writeFileSync('investing-stoxx50.html', content);
-
-    // load the content into cheerio
-    const $ = cheerio.load(content);
-
-    // extract json from script id="__NEXT_DATA__" tag
-    const json = $('#__NEXT_DATA__').text();
-
-    // parse the json and get the data from the props object
-    const data = JSON.parse(json);
-
-    // Access specific data, for example, pageProps
-    const pageProps = data.props.pageProps.state.quotesStore.quotes;
-
-    // loop through array
-    for (let i = 0; i < pageProps.length; i++) {
-      const prop = pageProps[i];
-
-      // each prop is an array
-      for (let j = 0; j < prop.length; j++) {
-        const item = prop[j];
-
-        switch (typeof item) {
-          case 'string':
-            console.log('String:', item); // log the string
-
-            // if item string ends with 'stocks.gainersLosers'
-            if (item.endsWith('stocks.gainersLosers')) {
-              // check that item starts with 'indexLosers'
-              if (item.startsWith('indexLosers')) {
-                // get the index of the item in the array
-                const index = pageProps.indexOf(item);
-
-                // get the next item in the array
-                const nextItem = pageProps[index + 1];
-
-                // check if nextItem is an object and has a data property
-                if (typeof nextItem === 'object' && nextItem.data) {
-                  console.log('nextItem', nextItem.data);
-                } else {
-                  console.log(
-                    'nextItem is not an object or does not have a data property',
-                  );
-                }
-              }
-            }
-
-            break;
-        }
-      }
-    }
+    fs.writeFileSync('sneakers.html', content);
 
     return { content };
   }
