@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CacheModule } from '@nestjs/cache-manager';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -11,8 +13,26 @@ import { CacheModule } from '@nestjs/cache-manager';
       // 5 minutes = 5 * 60 seconds = 5 * 1000 milliseconds
       ttl: 60 * 15 * 1000,
     }),
+    TypeOrmModule.forRoot({
+      type: 'better-sqlite3',
+
+      database: 'data.db',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true,
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private dataSource: DataSource) {
+    this.dataSource
+      .initialize()
+      .then(() => {
+        console.log('Data Source has been initialized!');
+      })
+      .catch((err) => {
+        console.error('Error during Data Source initialization', err);
+      });
+  }
+}

@@ -6,6 +6,9 @@ import * as cheerio from 'cheerio';
 import * as fs from 'node:fs';
 import { ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { Quote } from './entities/quote.entity';
+import { DataSource } from 'typeorm';
+import e from 'express';
 
 interface YahooHistoric {
   adjClose?: number | undefined;
@@ -152,24 +155,75 @@ const contextOptions = {
 
 @Controller('api/')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private dataSource: DataSource,
+  ) {}
 
   @ApiExcludeEndpoint()
-  @Get('/')
-  get(): string {
-    return this.appService.getHello();
+  @Get('/test')
+  async get(): Promise<string> {
+    // get single record from the database, where symbol is ^GSPC
+    const quote = await this.dataSource
+      .getRepository(Quote)
+      .findOneBy({ symbol: '^GSPC' });
+
+    // if the record does not exist, create it
+    if (!quote) {
+      const newQuote = new Quote();
+      newQuote.symbol = '^GSPC';
+      newQuote.json = await yahooFinance.quote('^GSPC');
+      await this.dataSource.getRepository(Quote).save(newQuote);
+      return newQuote.json;
+    }
+
+    // if the record exists, check if it is older than 1 minute
+    const now = new Date();
+    const lastUpdated = new Date(quote.updated);
+    const diff = Math.abs(now.getTime() - lastUpdated.getTime());
+    const diffMinutes = Math.ceil(diff / (1000 * 60));
+
+    // if the record is older than 1 minute, update it
+    if (diffMinutes > 1) {
+      quote.json = await yahooFinance.quote('^GSPC');
+      quote.updated = Date.now();
+      await this.dataSource.getRepository(Quote).save(quote);
+    }
+
+    return quote.json;
   }
 
   @UseInterceptors(CacheInterceptor)
   @Get('quote/:symbol')
   async quote(@Param() params: any): Promise<object> {
-    // console.log('symbol', params.symbol);
+    // get single record from the database, where symbol is ^GSPC
+    const quote = await this.dataSource
+      .getRepository(Quote)
+      .findOneBy({ symbol: params.symbol });
 
-    const results = await yahooFinance.quote(params.symbol);
+    // if the record does not exist, create it
+    if (!quote) {
+      const newQuote = new Quote();
+      newQuote.symbol = params.symbol;
+      newQuote.json = await yahooFinance.quote(params.symbol);
+      await this.dataSource.getRepository(Quote).save(newQuote);
+      return newQuote.json;
+    }
 
-    //results[0].
+    // if the record exists, check if it is older than 1 minute
+    const now = new Date();
+    const lastUpdated = new Date(quote.updated);
+    const diff = Math.abs(now.getTime() - lastUpdated.getTime());
+    const diffMinutes = Math.ceil(diff / (1000 * 60));
 
-    return results;
+    // if the record is older than 1 minute, update it
+    if (diffMinutes > 1) {
+      quote.json = await yahooFinance.quote(params.symbol);
+      quote.updated = Date.now();
+      await this.dataSource.getRepository(Quote).save(quote);
+    }
+
+    return quote.json;
   }
 
   @Get('gainers/:symbol')
@@ -183,52 +237,73 @@ export class AppController {
     return results;
   }
 
+  getStockData = async (symbol: string) => {
+    try {
+      const result = await yahooFinance.quoteCombine(symbol, {
+        fields: [
+          'regularMarketPrice',
+          'regularMarketChangePercent',
+          'longName',
+          'regularMarketPreviousClose',
+          'quoteType',
+          'averageDailyVolume10Day',
+        ],
+      });
+      console.log(result);
+      return result;
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+    }
+  };
+
   @Get('quotes')
   async quotes(@Query('symbols') symbols: string): Promise<object> {
     const symbolArray = symbols.split(',');
 
-    const results = await yahooFinance.quote(symbolArray, {
-      fields: [
-        'symbol',
-        'longName',
-        'regularMarketPrice',
-        'regularMarketChange',
-        'regularMarketChangePercent',
-        'regularMarketDayRange',
-      ],
-    });
+    // comma separated string to array
+
+    //return {
+    //   symbols: symbols,
+    // };
+
+    //const results = await yahooFinance.quoteCombine(['^GSPC', '^IXIC'], {
+    // fields: [
+    //   'symbol',
+    //   'longName',
+    //   'regularMarketPrice',
+    //   'regularMarketChange',
+    //   'regularMarketChangePercent',
+    //   'regularMarketDayRange',
+    // ],
+    //});
+
+    // loop through the symbolz and call the getStockData function
+    const results = await Promise.all(
+      symbolArray.map(async (symbol) => {
+        const result = await yahooFinance.quoteCombine(symbol);
+        return result;
+      }),
+    );
 
     return results;
   }
 
-  @UseInterceptors(CacheInterceptor)
+  // @UseInterceptors(CacheInterceptor)
   @Get('historical/:symbol')
   async historical(@Param() params: any): Promise<object> {
-    // console.log('symbol', params.symbol);
-
     // declare a date today
     const today = new Date();
 
-    // declare a date, 4 months ago
-    const fourMonthsAgo = new Date(today);
-    fourMonthsAgo.setMonth(today.getMonth() - 4);
+    // declare a date, 13 months ago
+    const thirteenMonthsAgo = new Date(today);
+    thirteenMonthsAgo.setMonth(today.getMonth() - 13);
 
     const query = params.symbol;
-    const queryOptions = { period1: fourMonthsAgo };
+    const queryOptions = { period1: thirteenMonthsAgo };
     const results: YahooHistoric[] = await yahooFinance.historical(
       query,
       queryOptions,
     );
-
-    // console.log('results2', results2);
-    // write the results to a file
-    //fs.writeFileSync('data.json', JSON.stringify(results2, null, 2));
-    // read the data.json file and parse it
-    // const data = fs.readFileSync('./data.json', 'utf8');
-
-    // read data.json file and parse it
-    //const data = fs.readFileSync('./data.json', 'utf8');
-    //const results: YahooHistoric[] = JSON.parse(data);
 
     // get index of the last entry in results
     const lastIndex = results.length - 1;
@@ -236,7 +311,9 @@ export class AppController {
 
     // get the entry, 5 entries before the last entry
     const fiveDayChangeEntry = results[lastIndex - 5];
+    // get the entry, 30 entries before the last entry
     const thirtyDayChangeEntry = results[lastIndex - 30];
+    // get the entry, 60 entries before the last entry
     const sixtyDayChangeEntry = results[lastIndex - 60];
 
     // calculate the change between the last entry and the entry 5 days ago
@@ -244,22 +321,6 @@ export class AppController {
       lastEntry.close,
       fiveDayChangeEntry.close ?? 0,
     );
-
-    // calculate the change between the last entry and the entry 30 days ago
-    const thirtyDayChange = calculateChange(
-      lastEntry.close,
-      thirtyDayChangeEntry.close ?? 0,
-    );
-
-    // calculate the change between the last entry and the entry 60 days ago
-    const sixtyDayChange = calculateChange(
-      lastEntry.close,
-      sixtyDayChangeEntry.close ?? 0,
-    );
-
-    console.log('fiveDayChange', fiveDayChange);
-    console.log('thirtyDayChange', thirtyDayChange);
-    console.log('sixtyDayChange', sixtyDayChange);
 
     // get the date, one month ago
     const oneMonthAgo = new Date(today);
@@ -271,14 +332,23 @@ export class AppController {
     // declare a date threeMonthsAgo
     const threeMonthsAgo = new Date(today);
     threeMonthsAgo.setMonth(today.getMonth() - 3);
-    //threeMonthsAgo.setDate(today.getDate() - 90);
-
-    //console.log('threeMonthsAgo', threeMonthsAgo);
 
     // calculate the change between the last entry and the entry three months ago
     const threeMonthChange = calculateHistoricChangeByDate(
       results,
       threeMonthsAgo,
+    );
+
+    // sixMonthChange
+    const sixMonthChange = calculateHistoricChangeByDate(
+      results,
+      new Date(today.setMonth(today.getMonth() - 6)),
+    );
+
+    // oneYearChange
+    const oneYearChange = calculateHistoricChangeByDate(
+      results,
+      new Date(today.setFullYear(today.getFullYear() - 1)),
     );
 
     return {
@@ -297,6 +367,14 @@ export class AppController {
         threeMonths: {
           change: threeMonthChange.change,
           changePercent: threeMonthChange.changePercent,
+        },
+        sixMonths: {
+          change: sixMonthChange.change,
+          changePercent: sixMonthChange.changePercent,
+        },
+        oneYear: {
+          change: oneYearChange.change,
+          changePercent: oneYearChange.changePercent,
         },
       },
     };
@@ -349,7 +427,7 @@ export class AppController {
     // get the indexes from the indexes array
     const indexSymbols = indexes.map((index) => index.yahooFinanceSymbol);
 
-    // create an array of promises for each index
+    // run all 4 functions in parallel
     const promises = indexSymbols.map(async (symbol) => {
       const quote = await this.quote({ symbol });
       const historical = await this.historical({ symbol });
@@ -469,7 +547,7 @@ export class AppController {
   async marketMovers(@Param() params: any): Promise<object> {
     // get the index from the indexes array
     const index = indexes.find(
-      (index) => index.yahooFinanceSymbol === '^STOXX50E',
+      (index) => index.yahooFinanceSymbol === params.symbol.toUpperCase(),
     );
 
     // if the index is not found, return an error

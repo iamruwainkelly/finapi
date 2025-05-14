@@ -1,0 +1,2036 @@
+{
+  "indices": [
+    {
+      "symbol": "^GSPC",
+      "quote": {
+        "language": "en-US",
+        "region": "US",
+        "quoteType": "INDEX",
+        "typeDisp": "Index",
+        "quoteSourceName": "Delayed Quote",
+        "triggerable": true,
+        "customPriceAlertConfidence": "HIGH",
+        "currency": "USD",
+        "exchange": "SNP",
+        "messageBoardId": "finmb_INDEXGSPC",
+        "exchangeTimezoneName": "America/New_York",
+        "exchangeTimezoneShortName": "EDT",
+        "gmtOffSetMilliseconds": -14400000,
+        "market": "us_market",
+        "esgPopulated": false,
+        "tradeable": false,
+        "cryptoTradeable": false,
+        "regularMarketChangePercent": -0.07114809,
+        "regularMarketPrice": 5659.91,
+        "hasPrePostMarketData": false,
+        "firstTradeDateMilliseconds": "1927-12-30T14:30:00.000Z",
+        "priceHint": 2,
+        "regularMarketChange": -4.029785,
+        "regularMarketDayHigh": 5691.69,
+        "regularMarketDayRange": {
+          "low": 5644.15,
+          "high": 5691.69
+        },
+        "regularMarketDayLow": 5644.15,
+        "regularMarketVolume": 2429494000,
+        "regularMarketPreviousClose": 5663.94,
+        "bid": 5585.08,
+        "ask": 5712.69,
+        "bidSize": 0,
+        "askSize": 0,
+        "fullExchangeName": "SNP",
+        "regularMarketOpen": 5679.65,
+        "averageDailyVolume3Month": 5293698688,
+        "averageDailyVolume10Day": 4724142000,
+        "fiftyTwoWeekLowChange": 824.8701,
+        "fiftyTwoWeekLowChangePercent": 0.17060255,
+        "fiftyTwoWeekRange": {
+          "low": 4835.04,
+          "high": 6147.43
+        },
+        "fiftyTwoWeekHighChange": -487.52002,
+        "fiftyTwoWeekHighChangePercent": -0.07930469,
+        "fiftyTwoWeekLow": 4835.04,
+        "fiftyTwoWeekHigh": 6147.43,
+        "fiftyTwoWeekChangePercent": 8.001411,
+        "fiftyDayAverage": 5561.491,
+        "fiftyDayAverageChange": 98.418945,
+        "fiftyDayAverageChangePercent": 0.017696504,
+        "twoHundredDayAverage": 5747.262,
+        "twoHundredDayAverageChange": -87.35205,
+        "twoHundredDayAverageChangePercent": -0.015198898,
+        "sourceInterval": 15,
+        "exchangeDataDelayedBy": 0,
+        "marketState": "CLOSED",
+        "corporateActions": [],
+        "regularMarketTime": "2025-05-09T20:56:57.000Z",
+        "shortName": "S&P 500",
+        "longName": "S&P 500",
+        "symbol": "^GSPC"
+      },
+      "historical": {
+        "symbol": "^GSPC",
+        "lastPrice": 5659.91015625,
+        "lastPriceDate": "2025-05-09T13:30:00.000Z",
+        "performance": {
+          "fiveDay": {
+            "change": -26.759765625,
+            "changePercent": -0.4705700522912856
+          },
+          "oneMonth": {
+            "change": 296.55029296875,
+            "changePercent": 5.529188801948552
+          },
+          "threeMonths": {
+            "change": -408.58984375,
+            "changePercent": -6.732962737908873
+          }
+        }
+      },
+      "search": {
+        "explains": [],
+        "count": 5,
+        "quotes": [
+          {
+            "exchange": "SNP",
+            "shortname": "S&P 500",
+            "quoteType": "INDEX",
+            "symbol": "^GSPC",
+            "index": "quotes",
+            "score": 13311500,
+            "typeDisp": "Index",
+            "longname": "S&P 500",
+            "exchDisp": "SNP",
+            "isYahooFinance": true
+          }
+        ],
+        "news": [
+          {
+            "uuid": "499b3457-b8bd-47b3-871b-067f5d9cbf21",
+            "title": "Inflation data, trade talks in focus: What to watch this week",
+            "publisher": "Yahoo Finance",
+            "link": "https://finance.yahoo.com/news/inflation-data-trade-talks-in-focus-what-to-watch-this-week-141426449.html",
+            "providerPublishTime": "2025-05-11T14:14:26.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/uXMpLp1HTCkY2MFEubE8uw--~B/aD00MDAwO3c9NjAwMDthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-05/07d8fee0-2d3a-11f0-87fc-f806e9ee6149",
+                  "width": 6000,
+                  "height": 4000,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/SB0QRThMqonHF70u6B8ixA--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-05/07d8fee0-2d3a-11f0-87fc-f806e9ee6149",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": ["^GSPC", "^IXIC", "^DJI"]
+          },
+          {
+            "uuid": "d3d44d7c-9c42-3dda-8c4e-e6dd41ea4ba3",
+            "title": "With a 54% Gain in 2025, This Artificial Intelligence (AI) Stock Is Crushing the S&P 500. Is It Too Late to Buy?",
+            "publisher": "Motley Fool",
+            "link": "https://finance.yahoo.com/m/d3d44d7c-9c42-3dda-8c4e-e6dd41ea4ba3/with-a-54%25-gain-in-2025%2C-this.html",
+            "providerPublishTime": "2025-05-11T14:23:00.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/3xg_XvBKJ5n9eWj9jxnn4Q--~B/aD05MzM7dz0xNDAwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/c65c64b832cf4e79d7547c3c0b3f0660",
+                  "width": 1400,
+                  "height": 933,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/e_MPkX59Nm7NU0m.SHQ2oQ--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/c65c64b832cf4e79d7547c3c0b3f0660",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": ["DUOL", "^GSPC"]
+          },
+          {
+            "uuid": "f864cd87-b7bb-40d1-916b-28e85f2909ba",
+            "title": "'We're not out of the woods': Wall Street strategists say stock market's pain won't end with Trump trade deals",
+            "publisher": "Yahoo Finance",
+            "link": "https://finance.yahoo.com/news/were-not-out-of-the-woods-wall-street-strategists-say-stock-markets-pain-wont-end-with-trump-trade-deals-120809921.html",
+            "providerPublishTime": "2025-05-11T12:08:09.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/55Hu8tKLYmj4i0HDYFBMww--~B/aD0yNjE4O3c9MzkyNzthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-05/d1f8a650-2c43-11f0-bff7-c07e01eab032",
+                  "width": 3927,
+                  "height": 2618,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/VzJKM64MzaaBz4pKM4X83Q--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-05/d1f8a650-2c43-11f0-bff7-c07e01eab032",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            }
+          },
+          {
+            "uuid": "380e1eba-589b-33a7-a5ca-16d0e8f1c78f",
+            "title": "The Best Dividend ETF to Invest $1,000 in Right Now",
+            "publisher": "Motley Fool",
+            "link": "https://finance.yahoo.com/m/380e1eba-589b-33a7-a5ca-16d0e8f1c78f/the-best-dividend-etf-to.html",
+            "providerPublishTime": "2025-05-11T15:47:00.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/kXu1guLTLop1_7OTfnnW5w--~B/aD04MDA7dz0xMjAwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/622a9c91dd93cb3c2afdd4d9cd5956e7",
+                  "width": 1200,
+                  "height": 800,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/DmZOBPQyFp14Z21p5cF0DQ--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/622a9c91dd93cb3c2afdd4d9cd5956e7",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": ["SCHW", "^GSPC"]
+          }
+        ],
+        "nav": [],
+        "lists": [],
+        "researchReports": [],
+        "screenerFieldResults": [],
+        "totalTime": 90,
+        "timeTakenForQuotes": 429,
+        "timeTakenForNews": 700,
+        "timeTakenForAlgowatchlist": 400,
+        "timeTakenForPredefinedScreener": 400,
+        "timeTakenForCrunchbase": 400,
+        "timeTakenForNav": 400,
+        "timeTakenForResearchReports": 0,
+        "timeTakenForScreenerField": 0,
+        "timeTakenForCulturalAssets": 0,
+        "timeTakenForSearchLists": 0
+      },
+      "marketMovers": {
+        "gainers": [
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 16942,
+            "flag": {
+              "name": "Insulet",
+              "code": "US"
+            },
+            "name": {
+              "label": "Insulet",
+              "title": "Insulet Corporation",
+              "derived": false,
+              "url": "/equities/insulet-corp"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "PODD",
+            "exchange": "NASDAQ",
+            "volume": "3216236",
+            "last": "310.67",
+            "change": "53.67",
+            "changePercent": "20.88",
+            "changeDirection": "Up",
+            "avgVolume": "874526",
+            "_liveVolume": 3216236
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 6391,
+            "flag": {
+              "name": "Microchip",
+              "code": "US"
+            },
+            "name": {
+              "label": "Microchip",
+              "title": "Microchip Technology Inc",
+              "derived": false,
+              "url": "/equities/microchip-technology-inc"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "MCHP",
+            "exchange": "NASDAQ",
+            "volume": "21360894",
+            "last": "55.33",
+            "change": "6.19",
+            "changePercent": "12.60",
+            "changeDirection": "Up",
+            "avgVolume": "12281777",
+            "_liveVolume": 21360894
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 1213041,
+            "flag": {
+              "name": "Solventum",
+              "code": "US"
+            },
+            "name": {
+              "label": "Solventum",
+              "title": "Solventum Corp",
+              "derived": false,
+              "url": "/equities/solventum"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "SOLV",
+            "exchange": "NYSE",
+            "volume": "1823654",
+            "last": "70.23",
+            "change": "3.60",
+            "changePercent": "5.40",
+            "changeDirection": "Up",
+            "avgVolume": "1206164",
+            "_liveVolume": 1823654
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 13569,
+            "flag": {
+              "name": "First Solar",
+              "code": "US"
+            },
+            "name": {
+              "label": "First Solar",
+              "title": "First Solar Inc",
+              "derived": false,
+              "url": "/equities/first-solar-inc"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "FSLR",
+            "exchange": "NASDAQ",
+            "volume": "5430363",
+            "last": "140.68",
+            "change": "6.92",
+            "changePercent": "5.17",
+            "changeDirection": "Up",
+            "avgVolume": "3647552",
+            "_liveVolume": 5430363
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 13994,
+            "flag": {
+              "name": "Tesla",
+              "code": "US"
+            },
+            "name": {
+              "label": "Tesla",
+              "title": "Tesla Inc",
+              "derived": false,
+              "url": "/equities/tesla-motors"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "TSLA",
+            "exchange": "NASDAQ",
+            "volume": "132387835",
+            "last": "298.26",
+            "change": "13.44",
+            "changePercent": "4.72",
+            "changeDirection": "Up",
+            "avgVolume": "120482103",
+            "_liveVolume": 132387835
+          }
+        ],
+        "losers": [
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 6460,
+            "flag": {
+              "name": "Akamai",
+              "code": "US"
+            },
+            "name": {
+              "label": "Akamai",
+              "title": "Akamai Technologies Inc",
+              "derived": false,
+              "url": "/equities/akamai-technologies-inc"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "AKAM",
+            "exchange": "NASDAQ",
+            "volume": "5837365",
+            "last": "76.25",
+            "change": "-9.19",
+            "changePercent": "-10.76",
+            "changeDirection": "Down",
+            "avgVolume": "2755460",
+            "_liveVolume": 5837365
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 6449,
+            "flag": {
+              "name": "Expedia",
+              "code": "US"
+            },
+            "name": {
+              "label": "Expedia",
+              "title": "Expedia Inc",
+              "derived": false,
+              "url": "/equities/expedia"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "EXPE",
+            "exchange": "NASDAQ",
+            "volume": "6379453",
+            "last": "156.66",
+            "change": "-12.33",
+            "changePercent": "-7.30",
+            "changeDirection": "Down",
+            "avgVolume": "2429901",
+            "_liveVolume": 6379453
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 1131557,
+            "flag": {
+              "name": "CrowdStrike Holdings",
+              "code": "US"
+            },
+            "name": {
+              "label": "CrowdStrike Holdings",
+              "title": "CrowdStrike Holdings Inc",
+              "derived": false,
+              "url": "/equities/crowdstrike-holdings-inc"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "CRWD",
+            "exchange": "NASDAQ",
+            "volume": "4693342",
+            "last": "410.57",
+            "change": "-18.06",
+            "changePercent": "-4.21",
+            "changeDirection": "Down",
+            "avgVolume": "4355511",
+            "_liveVolume": 4693342
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 1011774,
+            "flag": {
+              "name": "Vistra Energy",
+              "code": "US"
+            },
+            "name": {
+              "label": "Vistra Energy",
+              "title": "Vistra Energy Corp",
+              "derived": false,
+              "url": "/equities/vistra-energy-corp"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "VST",
+            "exchange": "NYSE",
+            "volume": "5859904",
+            "last": "135.75",
+            "change": "-5.16",
+            "changePercent": "-3.66",
+            "changeDirection": "Down",
+            "avgVolume": "8232967",
+            "_liveVolume": 5859904
+          },
+          {
+            "mobx_easy_id": "_me22ddnat",
+            "month": "",
+            "instrumentId": 32391,
+            "flag": {
+              "name": "Regeneron Pharma",
+              "code": "US"
+            },
+            "name": {
+              "label": "Regeneron Pharma",
+              "title": "Regeneron Pharmaceuticals Inc",
+              "derived": false,
+              "url": "/equities/regeneron-phar."
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "REGN",
+            "exchange": "NASDAQ",
+            "volume": "1499188",
+            "last": "527.78",
+            "change": "-19.89",
+            "changePercent": "-3.63",
+            "changeDirection": "Down",
+            "avgVolume": "1096292",
+            "_liveVolume": 1499188
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "^IXIC",
+      "quote": {
+        "language": "en-US",
+        "region": "US",
+        "quoteType": "INDEX",
+        "typeDisp": "Index",
+        "quoteSourceName": "Delayed Quote",
+        "triggerable": true,
+        "customPriceAlertConfidence": "HIGH",
+        "currency": "USD",
+        "hasPrePostMarketData": false,
+        "firstTradeDateMilliseconds": "1971-02-05T14:30:00.000Z",
+        "priceHint": 2,
+        "regularMarketChange": 0.77734375,
+        "regularMarketDayHigh": 18068.898,
+        "regularMarketDayRange": {
+          "low": 17853.836,
+          "high": 18068.898
+        },
+        "regularMarketDayLow": 17853.836,
+        "regularMarketVolume": 8132187000,
+        "regularMarketPreviousClose": 17928.139,
+        "bid": 0,
+        "ask": 0,
+        "bidSize": 0,
+        "askSize": 0,
+        "fullExchangeName": "Nasdaq GIDS",
+        "regularMarketOpen": 18022.5,
+        "averageDailyVolume3Month": 8328006065,
+        "averageDailyVolume10Day": 8553217000,
+        "fiftyTwoWeekLowChange": 3144.8857,
+        "fiftyTwoWeekLowChangePercent": 0.21272181,
+        "fiftyTwoWeekRange": {
+          "low": 14784.03,
+          "high": 20204.58
+        },
+        "fiftyTwoWeekHighChange": -2275.664,
+        "fiftyTwoWeekHighChangePercent": -0.1126311,
+        "fiftyTwoWeekLow": 14784.03,
+        "fiftyTwoWeekHigh": 20204.58,
+        "fiftyTwoWeekChangePercent": 8.515096,
+        "shortName": "NASDAQ Composite",
+        "longName": "NASDAQ Composite",
+        "corporateActions": [],
+        "regularMarketTime": "2025-05-09T21:15:59.000Z",
+        "exchange": "NIM",
+        "messageBoardId": "finmb_INDEXIXIC",
+        "exchangeTimezoneName": "America/New_York",
+        "exchangeTimezoneShortName": "EDT",
+        "gmtOffSetMilliseconds": -14400000,
+        "market": "us_market",
+        "esgPopulated": false,
+        "regularMarketChangePercent": 0.0043358863,
+        "regularMarketPrice": 17928.916,
+        "marketState": "CLOSED",
+        "fiftyDayAverage": 17401.273,
+        "fiftyDayAverageChange": 527.6426,
+        "fiftyDayAverageChangePercent": 0.030322067,
+        "twoHundredDayAverage": 18315.58,
+        "twoHundredDayAverageChange": -386.66406,
+        "twoHundredDayAverageChangePercent": -0.02111121,
+        "sourceInterval": 15,
+        "exchangeDataDelayedBy": 0,
+        "tradeable": false,
+        "cryptoTradeable": false,
+        "symbol": "^IXIC"
+      },
+      "historical": {
+        "symbol": "^IXIC",
+        "lastPrice": 17928.919921875,
+        "lastPriceDate": "2025-05-09T13:30:00.000Z",
+        "performance": {
+          "fiveDay": {
+            "change": -48.810546875,
+            "changePercent": -0.27150561056550215
+          },
+          "oneMonth": {
+            "change": 1204.458984375,
+            "changePercent": 7.201780606717986
+          },
+          "threeMonths": {
+            "change": -1714.939453125,
+            "changePercent": -8.730155415933892
+          }
+        }
+      },
+      "search": {
+        "explains": [],
+        "count": 10,
+        "quotes": [
+          {
+            "exchange": "NIM",
+            "shortname": "NASDAQ Composite",
+            "quoteType": "INDEX",
+            "symbol": "^IXIC",
+            "index": "quotes",
+            "score": 11755500,
+            "typeDisp": "Index",
+            "longname": "NASDAQ Composite",
+            "exchDisp": "NASDAQ GIDS",
+            "isYahooFinance": true
+          },
+          {
+            "exchange": "LSE",
+            "shortname": "IXICO PLC ORD 1P",
+            "quoteType": "EQUITY",
+            "symbol": "IXI.L",
+            "index": "quotes",
+            "score": 20005,
+            "typeDisp": "Equity",
+            "longname": "IXICO plc",
+            "exchDisp": "London",
+            "sector": "Healthcare",
+            "sectorDisp": "Healthcare",
+            "industry": "Biotechnology",
+            "industryDisp": "Biotechnology",
+            "isYahooFinance": true
+          },
+          {
+            "exchange": "FRA",
+            "shortname": "Ixico PLC                     R",
+            "quoteType": "EQUITY",
+            "symbol": "PYPB.F",
+            "index": "quotes",
+            "score": 20004,
+            "typeDisp": "Equity",
+            "longname": "IXICO plc",
+            "exchDisp": "Frankfurt",
+            "sector": "Healthcare",
+            "sectorDisp": "Healthcare",
+            "industry": "Biotechnology",
+            "industryDisp": "Biotechnology",
+            "isYahooFinance": true
+          },
+          {
+            "exchange": "STU",
+            "shortname": "IXICO PLC",
+            "quoteType": "EQUITY",
+            "symbol": "PYPB.SG",
+            "index": "quotes",
+            "score": 20001,
+            "typeDisp": "Equity",
+            "longname": "IXICO PLC",
+            "exchDisp": "Stuttgart",
+            "sector": "Healthcare",
+            "sectorDisp": "Healthcare",
+            "industry": "Biotechnology",
+            "industryDisp": "Biotechnology",
+            "isYahooFinance": true
+          },
+          {
+            "exchange": "BER",
+            "shortname": "Ixico PLC                     R",
+            "quoteType": "EQUITY",
+            "symbol": "PYPB.BE",
+            "index": "quotes",
+            "score": 20001,
+            "typeDisp": "Equity",
+            "longname": "IXICO PLC",
+            "exchDisp": "Berlin",
+            "sector": "Healthcare",
+            "sectorDisp": "Healthcare",
+            "industry": "Biotechnology",
+            "industryDisp": "Biotechnology",
+            "isYahooFinance": true
+          },
+          {
+            "exchange": "PNK",
+            "shortname": "IXICO PLC",
+            "quoteType": "EQUITY",
+            "symbol": "PHYOF",
+            "index": "quotes",
+            "score": 20001,
+            "typeDisp": "Equity",
+            "longname": "IXICO plc",
+            "exchDisp": "OTC Markets",
+            "sector": "Healthcare",
+            "sectorDisp": "Healthcare",
+            "industry": "Biotechnology",
+            "industryDisp": "Biotechnology",
+            "isYahooFinance": true
+          }
+        ],
+        "news": [
+          {
+            "uuid": "499b3457-b8bd-47b3-871b-067f5d9cbf21",
+            "title": "Inflation data, trade talks in focus: What to watch this week",
+            "publisher": "Yahoo Finance",
+            "link": "https://finance.yahoo.com/news/inflation-data-trade-talks-in-focus-what-to-watch-this-week-141426449.html",
+            "providerPublishTime": "2025-05-11T14:14:26.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/uXMpLp1HTCkY2MFEubE8uw--~B/aD00MDAwO3c9NjAwMDthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-05/07d8fee0-2d3a-11f0-87fc-f806e9ee6149",
+                  "width": 6000,
+                  "height": 4000,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/SB0QRThMqonHF70u6B8ixA--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-05/07d8fee0-2d3a-11f0-87fc-f806e9ee6149",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": ["^GSPC", "^IXIC", "^DJI"]
+          },
+          {
+            "uuid": "f864cd87-b7bb-40d1-916b-28e85f2909ba",
+            "title": "'We're not out of the woods': Wall Street strategists say stock market's pain won't end with Trump trade deals",
+            "publisher": "Yahoo Finance",
+            "link": "https://finance.yahoo.com/news/were-not-out-of-the-woods-wall-street-strategists-say-stock-markets-pain-wont-end-with-trump-trade-deals-120809921.html",
+            "providerPublishTime": "2025-05-11T12:08:09.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/55Hu8tKLYmj4i0HDYFBMww--~B/aD0yNjE4O3c9MzkyNzthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-05/d1f8a650-2c43-11f0-bff7-c07e01eab032",
+                  "width": 3927,
+                  "height": 2618,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/VzJKM64MzaaBz4pKM4X83Q--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-05/d1f8a650-2c43-11f0-bff7-c07e01eab032",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            }
+          },
+          {
+            "uuid": "944c0099-c0ff-3f80-ae80-a8201fce448b",
+            "title": "Believe It or Not, Stocks Got More Expensive in April",
+            "publisher": "Motley Fool",
+            "link": "https://finance.yahoo.com/m/944c0099-c0ff-3f80-ae80-a8201fce448b/believe-it-or-not%2C-stocks-got.html",
+            "providerPublishTime": "2025-05-11T08:20:00.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/CkcWPCYfisgsC.dkH7aP0w--~B/aD04MDA7dz0xMjAwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/95387d175ac50526e1925b845f8e80b1",
+                  "width": 1200,
+                  "height": 800,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/MykQynJ5KuD8hmNiVP1Dyg--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/95387d175ac50526e1925b845f8e80b1",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": ["^GSPC"]
+          },
+          {
+            "uuid": "4bdb3177-fc4d-3e59-8bd7-6f027a3d5e30",
+            "title": "The S&P 500 Made a Historic Move for the 7th Time in 75 Years in April -- and It's Correctly Predicted Where Stocks Go Next 100% of the Time",
+            "publisher": "Motley Fool",
+            "link": "https://finance.yahoo.com/m/4bdb3177-fc4d-3e59-8bd7-6f027a3d5e30/the-s%26p-500-made-a-historic.html",
+            "providerPublishTime": "2025-05-10T07:06:00.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/kW_MlovFNL2U7b4rmm4sWQ--~B/aD05MzM7dz0xNDAwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/78bf4de7535adcf1315a8dabc8cf7547",
+                  "width": 1400,
+                  "height": 933,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/yJsmtN7fwouWMl2uAt7GCA--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/78bf4de7535adcf1315a8dabc8cf7547",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": ["^GSPC", "COMP", "^DJI"]
+          }
+        ],
+        "nav": [],
+        "lists": [],
+        "researchReports": [],
+        "screenerFieldResults": [],
+        "totalTime": 78,
+        "timeTakenForQuotes": 430,
+        "timeTakenForNews": 700,
+        "timeTakenForAlgowatchlist": 400,
+        "timeTakenForPredefinedScreener": 400,
+        "timeTakenForCrunchbase": 400,
+        "timeTakenForNav": 400,
+        "timeTakenForResearchReports": 0,
+        "timeTakenForScreenerField": 0,
+        "timeTakenForCulturalAssets": 0,
+        "timeTakenForSearchLists": 0
+      },
+      "marketMovers": {
+        "gainers": [
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1193020,
+            "flag": {
+              "name": "Next Tech Holding",
+              "code": "US"
+            },
+            "name": {
+              "label": "Next Tech Holding",
+              "title": "Next Technology Holding Inc",
+              "derived": false,
+              "url": "/equities/wetrade"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "NXTT",
+            "exchange": "NASDAQ",
+            "volume": "217838757",
+            "last": "2.36",
+            "change": "2.05",
+            "changePercent": "661.29",
+            "changeDirection": "Up",
+            "avgVolume": "3084322",
+            "_liveVolume": 217838757
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 961051,
+            "flag": {
+              "name": "Abits",
+              "code": "US"
+            },
+            "name": {
+              "label": "Abits",
+              "title": "Abits Group Inc",
+              "derived": false,
+              "url": "/equities/moxian-inc"
+            },
+            "precision": {
+              "change": 4,
+              "changePercent": 2
+            },
+            "symbol": "ABTS",
+            "exchange": "NASDAQ",
+            "volume": "5986846",
+            "last": "8.41",
+            "change": "6.0800",
+            "changePercent": "260.94",
+            "changeDirection": "Up",
+            "avgVolume": "87405",
+            "_liveVolume": 5986846
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1163698,
+            "flag": {
+              "name": "Nuvve Holding",
+              "code": "US"
+            },
+            "name": {
+              "label": "Nuvve Holding",
+              "title": "Nuvve Holding Corp",
+              "derived": false,
+              "url": "/equities/newborn-acquisition-corp"
+            },
+            "precision": {
+              "change": 4,
+              "changePercent": 2
+            },
+            "symbol": "NVVE",
+            "exchange": "NASDAQ",
+            "volume": "263633188",
+            "last": "2.78",
+            "change": "1.6400",
+            "changePercent": "143.86",
+            "changeDirection": "Up",
+            "avgVolume": "5312716",
+            "_liveVolume": 263633188
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1174608,
+            "flag": {
+              "name": "Regencell Bioscience Holdings",
+              "code": "US"
+            },
+            "name": {
+              "label": "Regencell Bioscience Holdings",
+              "title": "Regencell Bioscience Holdings Ltd",
+              "derived": false,
+              "url": "/equities/regencell-bioscience-holdings"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "RGC",
+            "exchange": "NASDAQ",
+            "volume": "122323",
+            "last": "366.01",
+            "change": "154.01",
+            "changePercent": "72.65",
+            "changeDirection": "Up",
+            "avgVolume": "690477",
+            "_liveVolume": 122323
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1166433,
+            "flag": {
+              "name": "Siyata Mobile",
+              "code": "US"
+            },
+            "name": {
+              "label": "Siyata Mobile",
+              "title": "Siyata Mobile Inc",
+              "derived": false,
+              "url": "/equities/siyata-mobile"
+            },
+            "precision": {
+              "change": 3,
+              "changePercent": 2
+            },
+            "symbol": "SYTA",
+            "exchange": "NASDAQ",
+            "volume": "142969110",
+            "last": "1.67",
+            "change": "0.690",
+            "changePercent": "70.44",
+            "changeDirection": "Up",
+            "avgVolume": "3110661",
+            "_liveVolume": 142969110
+          }
+        ],
+        "losers": [
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1050147,
+            "flag": {
+              "name": "NuCana",
+              "code": "US"
+            },
+            "name": {
+              "label": "NuCana",
+              "title": "NuCana PLC",
+              "derived": false,
+              "url": "/equities/nucana"
+            },
+            "precision": {
+              "change": 3,
+              "changePercent": 2
+            },
+            "symbol": "NCNA",
+            "exchange": "NASDAQ",
+            "volume": "154234702",
+            "last": "0.042",
+            "change": "-0.061",
+            "changePercent": "-59.28",
+            "changeDirection": "Down",
+            "avgVolume": "6936074",
+            "_liveVolume": 154234702
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1174610,
+            "flag": {
+              "name": "Twin Vee Powercats Co",
+              "code": "US"
+            },
+            "name": {
+              "label": "Twin Vee Powercats Co",
+              "title": "Twin Vee Powercats Co",
+              "derived": false,
+              "url": "/equities/twin-vee-powercats-co"
+            },
+            "precision": {
+              "change": 4,
+              "changePercent": 2
+            },
+            "symbol": "VEEE",
+            "exchange": "NASDAQ",
+            "volume": "3490628",
+            "last": "3.44",
+            "change": "-4.0100",
+            "changePercent": "-53.83",
+            "changeDirection": "Down",
+            "avgVolume": "1439645",
+            "_liveVolume": 3490628
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1123000,
+            "flag": {
+              "name": "Super League Enterpris",
+              "code": "US"
+            },
+            "name": {
+              "label": "Super League Enterpris",
+              "title": "Super League Enterprise Inc",
+              "derived": false,
+              "url": "/equities/super-league-gaming"
+            },
+            "precision": {
+              "change": 3,
+              "changePercent": 2
+            },
+            "symbol": "SLE",
+            "exchange": "NASDAQ",
+            "volume": "3416050",
+            "last": "0.15",
+            "change": "-0.175",
+            "changePercent": "-53.78",
+            "changeDirection": "Down",
+            "avgVolume": "240130",
+            "_liveVolume": 3416050
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 1024336,
+            "flag": {
+              "name": "ENDRA Life Sciences",
+              "code": "US"
+            },
+            "name": {
+              "label": "ENDRA Life Sciences",
+              "title": "ENDRA Life Sciences Inc",
+              "derived": false,
+              "url": "/equities/endra-life-sciences"
+            },
+            "precision": {
+              "change": 3,
+              "changePercent": 2
+            },
+            "symbol": "NDRA",
+            "exchange": "NASDAQ",
+            "volume": "996976",
+            "last": "3.26",
+            "change": "-2.890",
+            "changePercent": "-46.99",
+            "changeDirection": "Down",
+            "avgVolume": "158752",
+            "_liveVolume": 996976
+          },
+          {
+            "mobx_easy_id": "_g6x5uqw9h",
+            "month": "",
+            "instrumentId": 52812,
+            "flag": {
+              "name": "Iovance Biotherapeutics",
+              "code": "US"
+            },
+            "name": {
+              "label": "Iovance Biotherapeutics",
+              "title": "Iovance Biotherapeutics Inc",
+              "derived": false,
+              "url": "/equities/lion-biotechnologies"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "IOVA",
+            "exchange": "NASDAQ",
+            "volume": "112356789",
+            "last": "1.75",
+            "change": "-1.42",
+            "changePercent": "-44.79",
+            "changeDirection": "Down",
+            "avgVolume": "11936516",
+            "_liveVolume": 112356789
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "^STOXX50E",
+      "quote": {
+        "language": "en-US",
+        "region": "US",
+        "quoteType": "INDEX",
+        "typeDisp": "Index",
+        "quoteSourceName": "Delayed Quote",
+        "triggerable": false,
+        "customPriceAlertConfidence": "LOW",
+        "market": "ch_market",
+        "esgPopulated": false,
+        "longName": "EURO STOXX 50                 I",
+        "shortName": "EURO STOXX 50                 I",
+        "marketState": "CLOSED",
+        "corporateActions": [],
+        "regularMarketTime": "2025-05-09T16:00:00.000Z",
+        "regularMarketChangePercent": 0.39327905,
+        "regularMarketPrice": 5309.74,
+        "currency": "EUR",
+        "hasPrePostMarketData": false,
+        "firstTradeDateMilliseconds": "2007-03-30T07:00:00.000Z",
+        "priceHint": 2,
+        "regularMarketChange": 20.800293,
+        "regularMarketDayHigh": 5323.61,
+        "regularMarketDayRange": {
+          "low": 5286.04,
+          "high": 5323.61
+        },
+        "regularMarketDayLow": 5286.04,
+        "regularMarketVolume": 0,
+        "regularMarketPreviousClose": 5288.94,
+        "bid": 0,
+        "ask": 0,
+        "bidSize": 0,
+        "askSize": 0,
+        "fullExchangeName": "Zurich",
+        "regularMarketOpen": 5286.04,
+        "averageDailyVolume3Month": 30061401,
+        "averageDailyVolume10Day": 24689250,
+        "fiftyTwoWeekLowChange": 835.8003,
+        "fiftyTwoWeekLowChangePercent": 0.18681526,
+        "fiftyTwoWeekRange": {
+          "low": 4473.94,
+          "high": 5568.19
+        },
+        "fiftyTwoWeekHighChange": -258.4497,
+        "fiftyTwoWeekHighChangePercent": -0.04641539,
+        "fiftyTwoWeekLow": 4473.94,
+        "fiftyTwoWeekHigh": 5568.19,
+        "fiftyTwoWeekChangePercent": 3.4777522,
+        "fiftyDayAverage": 5235.695,
+        "fiftyDayAverageChange": 74.04541,
+        "fiftyDayAverageChangePercent": 0.014142423,
+        "twoHundredDayAverage": 5026.387,
+        "twoHundredDayAverageChange": 283.35303,
+        "twoHundredDayAverageChangePercent": 0.0563731,
+        "sourceInterval": 15,
+        "exchangeDataDelayedBy": 0,
+        "tradeable": false,
+        "cryptoTradeable": false,
+        "exchange": "ZRH",
+        "messageBoardId": "finmb_INDEXSTOXX50E",
+        "exchangeTimezoneName": "Europe/Zurich",
+        "exchangeTimezoneShortName": "CEST",
+        "gmtOffSetMilliseconds": 7200000,
+        "symbol": "^STOXX50E"
+      },
+      "historical": {
+        "symbol": "^STOXX50E",
+        "lastPrice": 5309.740234375,
+        "lastPriceDate": "2025-05-09T07:00:00.000Z",
+        "performance": {
+          "fiveDay": {
+            "change": 24.55029296875,
+            "changePercent": 0.4645110817383001
+          },
+          "oneMonth": {
+            "change": 522.51025390625,
+            "changePercent": 10.914667898513777
+          },
+          "threeMonths": {
+            "change": -81.169921875,
+            "changePercent": -1.505681221210762
+          }
+        }
+      },
+      "search": {
+        "explains": [],
+        "count": 5,
+        "quotes": [
+          {
+            "exchange": "ZRH",
+            "shortname": "EURO STOXX 50                 I",
+            "quoteType": "INDEX",
+            "symbol": "^STOXX50E",
+            "index": "quotes",
+            "score": 10024500,
+            "typeDisp": "Index",
+            "longname": "EURO STOXX 50                 I",
+            "exchDisp": "Zurich Stock Exchange",
+            "isYahooFinance": true
+          }
+        ],
+        "news": [
+          {
+            "uuid": "11d8c50f-b177-35dd-ac70-562a9ad356d8",
+            "title": "Tariffs have 'quite clearly' increased recession odds",
+            "publisher": "Yahoo Finance Video",
+            "link": "https://finance.yahoo.com/video/tariffs-quite-clearly-increased-recession-135336579.html",
+            "providerPublishTime": "2025-03-27T13:53:36.000Z",
+            "type": "VIDEO",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/czL4.hj3qW3USGbEuTfjmQ--~B/aD0zMzc4O3c9NjAwMDthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-03/c9cca660-0b10-11f0-bdce-89b4740264e1",
+                  "width": 6000,
+                  "height": 3378,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/aIXgWqqi0UpaIHP2TdNscg--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-03/c9cca660-0b10-11f0-bdce-89b4740264e1",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            }
+          },
+          {
+            "uuid": "003284bf-9747-390c-a132-256c1a7760db",
+            "title": "European stocks emerging as top theme as traders search outside US",
+            "publisher": "Yahoo Finance Video",
+            "link": "https://finance.yahoo.com/video/european-stocks-emerging-top-theme-152651880.html",
+            "providerPublishTime": "2025-03-17T15:26:51.000Z",
+            "type": "VIDEO",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/DE0MiZJul6FY50PuXA4ABA--~B/aD0zMzc4O3c9NjAwMDthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-03/384fd1e0-0344-11f0-bdb6-138b231876f1",
+                  "width": 6000,
+                  "height": 3378,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/1ipYcBUmMuMtHKcG9Z0Jxg--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-03/384fd1e0-0344-11f0-bdb6-138b231876f1",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": [
+              "XLU",
+              "^FCHI",
+              "^GSPC",
+              "^IXIC",
+              "^FTSE",
+              "^DJI",
+              "XLV",
+              "^GDAXI",
+              "^STOXX50E"
+            ]
+          },
+          {
+            "uuid": "97d12ac6-c64c-3da5-a490-42c2db43ff39",
+            "title": "Euro, Stocks Fall After ECB's Lagarde Warns of Tariff Impact",
+            "publisher": "The Wall Street Journal",
+            "link": "https://finance.yahoo.com/m/97d12ac6-c64c-3da5-a490-42c2db43ff39/euro%2C-stocks-fall-after-ecb%27s.html",
+            "providerPublishTime": "2025-03-20T11:02:32.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/Fwf5HL4GsEGPbDfR3MJBPg--~B/aD02MzA7dz0xMjAwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/wsj.com/7b2c285183be07ca3c4e8242b25a59a8",
+                  "width": 1200,
+                  "height": 630,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/zIJaagDuCJitt1Cvcwyc7A--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/wsj.com/7b2c285183be07ca3c4e8242b25a59a8",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": [
+              "^STOXX50E",
+              "^STOXX",
+              "EURUSD=X",
+              "USD=X",
+              "EUR=X"
+            ]
+          },
+          {
+            "uuid": "9a27c060-d2a9-40ba-b52f-12ef09253af4",
+            "title": "European stocks are the hottest trade on Wall Street as investors turn away from US 'exceptionalism'",
+            "publisher": "Yahoo Finance",
+            "link": "https://finance.yahoo.com/news/european-stocks-are-the-hottest-trade-on-wall-street-as-investors-turn-away-from-us-exceptionalism-121005792.html",
+            "providerPublishTime": "2025-03-11T12:10:05.000Z",
+            "type": "STORY",
+            "thumbnail": {
+              "resolutions": [
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/P995Oo_xHZBcA3qGXsRW6w--~B/aD0zNjQ4O3c9NTQ3MjthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-03/0cdb2920-fe6b-11ef-95ff-7c5d9585d67b",
+                  "width": 5472,
+                  "height": 3648,
+                  "tag": "original"
+                },
+                {
+                  "url": "https://s.yimg.com/uu/api/res/1.2/OTikrt4CsO76Q8fnDRonFw--~B/Zmk9ZmlsbDtoPTE0MDtweW9mZj0wO3c9MTQwO2FwcGlkPXl0YWNoeW9u/https://s.yimg.com/os/creatr-uploaded-images/2025-03/0cdb2920-fe6b-11ef-95ff-7c5d9585d67b",
+                  "width": 140,
+                  "height": 140,
+                  "tag": "140x140"
+                }
+              ]
+            },
+            "relatedTickers": [
+              "^GDAXI",
+              "^STOXX50E",
+              "^GSPC",
+              "^FCHI",
+              "^IXIC",
+              "^FTSE"
+            ]
+          }
+        ],
+        "nav": [],
+        "lists": [],
+        "researchReports": [],
+        "screenerFieldResults": [],
+        "totalTime": 99,
+        "timeTakenForQuotes": 417,
+        "timeTakenForNews": 700,
+        "timeTakenForAlgowatchlist": 400,
+        "timeTakenForPredefinedScreener": 400,
+        "timeTakenForCrunchbase": 400,
+        "timeTakenForNav": 400,
+        "timeTakenForResearchReports": 0,
+        "timeTakenForScreenerField": 0,
+        "timeTakenForCulturalAssets": 0,
+        "timeTakenForSearchLists": 0
+      },
+      "marketMovers": {
+        "gainers": [
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 346,
+            "flag": {
+              "name": "Bayer",
+              "code": "DE"
+            },
+            "name": {
+              "label": "Bayer",
+              "title": "Bayer AG NA",
+              "derived": true,
+              "url": "/equities/bayer-ag"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "BAYGN",
+            "exchange": "Xetra",
+            "volume": "4475660",
+            "last": "24.05",
+            "change": "0.63",
+            "changePercent": "2.69",
+            "changeDirection": "Up",
+            "avgVolume": "4368750",
+            "_liveVolume": 4475660
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 400,
+            "flag": {
+              "name": "L'Oreal",
+              "code": "FR"
+            },
+            "name": {
+              "label": "L'Oreal",
+              "title": "L’Oreal SA",
+              "derived": false,
+              "url": "/equities/l-oreal"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "OREP",
+            "exchange": "Paris",
+            "volume": "357884",
+            "last": "383.20",
+            "change": "7.85",
+            "changePercent": "2.09",
+            "changeDirection": "Up",
+            "avgVolume": "520115",
+            "_liveVolume": 357884
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 6963,
+            "flag": {
+              "name": "Enel",
+              "code": "IT"
+            },
+            "name": {
+              "label": "Enel",
+              "title": "Enel",
+              "derived": false,
+              "url": "/equities/enel"
+            },
+            "precision": {
+              "change": 3,
+              "changePercent": 2
+            },
+            "symbol": "ENEI",
+            "exchange": "Milan",
+            "volume": "27788815",
+            "last": "7.74",
+            "change": "0.157",
+            "changePercent": "2.07",
+            "changeDirection": "Up",
+            "avgVolume": "33198337",
+            "_liveVolume": 27788815
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 305,
+            "flag": {
+              "name": "Philips",
+              "code": "NL"
+            },
+            "name": {
+              "label": "Philips",
+              "title": "Koninklijke Philips NV",
+              "derived": false,
+              "url": "/equities/philips-kon"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "PHG",
+            "exchange": "Amsterdam",
+            "volume": "3125759",
+            "last": "21.86",
+            "change": "0.43",
+            "changePercent": "2.01",
+            "changeDirection": "Up",
+            "avgVolume": "2226493",
+            "_liveVolume": 3125759
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 6974,
+            "flag": {
+              "name": "Eni SpA",
+              "code": "IT"
+            },
+            "name": {
+              "label": "Eni SpA",
+              "title": "Eni SpA",
+              "derived": false,
+              "url": "/equities/eni"
+            },
+            "precision": {
+              "change": 3,
+              "changePercent": 2
+            },
+            "symbol": "ENI",
+            "exchange": "Milan",
+            "volume": "14873901",
+            "last": "13.00",
+            "change": "0.254",
+            "changePercent": "1.99",
+            "changeDirection": "Up",
+            "avgVolume": "15191803",
+            "_liveVolume": 14873901
+          }
+        ],
+        "losers": [
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 347,
+            "flag": {
+              "name": "Allianz",
+              "code": "DE"
+            },
+            "name": {
+              "label": "Allianz",
+              "title": "Allianz SE VNA O.N.",
+              "derived": true,
+              "url": "/equities/allianz-ag"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "ALVG",
+            "exchange": "Xetra",
+            "volume": "1127403",
+            "last": "362.40",
+            "change": "-10.00",
+            "changePercent": "-2.69",
+            "changeDirection": "Down",
+            "avgVolume": "1030498",
+            "_liveVolume": 1127403
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 6858,
+            "flag": {
+              "name": "Flutter Entertainment",
+              "code": "GB"
+            },
+            "name": {
+              "label": "Flutter Entertainment",
+              "title": "Flutter Entertainment PLC",
+              "derived": false,
+              "url": "/equities/paddy-power"
+            },
+            "precision": {
+              "change": 1,
+              "changePercent": 2
+            },
+            "symbol": "FLTRF",
+            "exchange": "London",
+            "volume": "54620",
+            "last": "17,885.00",
+            "change": "-315.0",
+            "changePercent": "-1.73",
+            "changeDirection": "Down",
+            "avgVolume": "268828",
+            "_liveVolume": 54620
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 6991,
+            "flag": {
+              "name": "Safran",
+              "code": "FR"
+            },
+            "name": {
+              "label": "Safran",
+              "title": "Safran SA",
+              "derived": false,
+              "url": "/equities/safran"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "SAF",
+            "exchange": "Paris",
+            "volume": "476403",
+            "last": "248.20",
+            "change": "-2.00",
+            "changePercent": "-0.80",
+            "changeDirection": "Down",
+            "avgVolume": "820564",
+            "_liveVolume": 476403
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 405,
+            "flag": {
+              "name": "EssilorLuxottica",
+              "code": "FR"
+            },
+            "name": {
+              "label": "EssilorLuxottica",
+              "title": "EssilorLuxottica SA",
+              "derived": false,
+              "url": "/equities/essilor-internat"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "ESLX",
+            "exchange": "Paris",
+            "volume": "779629",
+            "last": "242.30",
+            "change": "-1.80",
+            "changePercent": "-0.74",
+            "changeDirection": "Down",
+            "avgVolume": "714004",
+            "_liveVolume": 779629
+          },
+          {
+            "mobx_easy_id": "_76qus7opp",
+            "month": "",
+            "instrumentId": 6917,
+            "flag": {
+              "name": "ASML Holding",
+              "code": "NL"
+            },
+            "name": {
+              "label": "ASML Holding",
+              "title": "ASML Holding NV",
+              "derived": false,
+              "url": "/equities/asml-holding"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "ASML",
+            "exchange": "Amsterdam",
+            "volume": "728278",
+            "last": "626.80",
+            "change": "-3.70",
+            "changePercent": "-0.59",
+            "changeDirection": "Down",
+            "avgVolume": "895088",
+            "_liveVolume": 728278
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "^SSMI",
+      "quote": {
+        "language": "en-US",
+        "region": "US",
+        "quoteType": "INDEX",
+        "typeDisp": "Index",
+        "quoteSourceName": "Delayed Quote",
+        "triggerable": false,
+        "customPriceAlertConfidence": "LOW",
+        "currency": "CHF",
+        "corporateActions": [],
+        "regularMarketTime": "2025-05-09T20:06:00.000Z",
+        "exchange": "EBS",
+        "messageBoardId": "finmb_INDEXSSMI",
+        "exchangeTimezoneName": "Europe/Zurich",
+        "exchangeTimezoneShortName": "CEST",
+        "gmtOffSetMilliseconds": 7200000,
+        "market": "ch_market",
+        "esgPopulated": false,
+        "regularMarketChangePercent": 0.21224657,
+        "regularMarketPrice": 12087.32,
+        "shortName": "SMI PR",
+        "sourceInterval": 15,
+        "exchangeDataDelayedBy": 15,
+        "tradeable": false,
+        "cryptoTradeable": false,
+        "hasPrePostMarketData": false,
+        "firstTradeDateMilliseconds": "1990-11-09T08:00:00.000Z",
+        "priceHint": 2,
+        "regularMarketChange": 25.600586,
+        "regularMarketDayHigh": 12123.04,
+        "regularMarketDayRange": {
+          "low": 12054.42,
+          "high": 12123.04
+        },
+        "regularMarketDayLow": 12054.42,
+        "regularMarketVolume": 0,
+        "regularMarketPreviousClose": 12061.72,
+        "bid": 12084.42,
+        "ask": 12088.18,
+        "bidSize": 0,
+        "askSize": 0,
+        "fullExchangeName": "Swiss",
+        "regularMarketOpen": 12101,
+        "averageDailyVolume3Month": 32039778,
+        "averageDailyVolume10Day": 25305900,
+        "fiftyTwoWeekLowChange": 1387.6602,
+        "fiftyTwoWeekLowChangePercent": 0.12969199,
+        "fiftyTwoWeekRange": {
+          "low": 10699.66,
+          "high": 13199.05
+        },
+        "fiftyTwoWeekHighChange": -1111.7295,
+        "fiftyTwoWeekHighChangePercent": -0.084227994,
+        "fiftyTwoWeekLow": 10699.66,
+        "fiftyTwoWeekHigh": 13199.05,
+        "fiftyTwoWeekChangePercent": 3.0633807,
+        "fiftyDayAverage": 12420.361,
+        "fiftyDayAverageChange": -333.04102,
+        "fiftyDayAverageChangePercent": -0.026814116,
+        "twoHundredDayAverage": 12153.88,
+        "twoHundredDayAverageChange": -66.55957,
+        "twoHundredDayAverageChangePercent": -0.005476405,
+        "marketState": "CLOSED",
+        "symbol": "^SSMI"
+      },
+      "historical": {
+        "symbol": "^SSMI",
+        "lastPrice": 12087.3203125,
+        "lastPriceDate": "2025-05-09T07:00:00.000Z",
+        "performance": {
+          "fiveDay": {
+            "change": -166.4697265625,
+            "changePercent": -1.3585162307484426
+          },
+          "oneMonth": {
+            "change": 847.490234375,
+            "changePercent": 7.54006269208988
+          },
+          "threeMonths": {
+            "change": -606.83984375,
+            "changePercent": -4.780464688333249
+          }
+        }
+      },
+      "search": {
+        "explains": [],
+        "count": 1,
+        "quotes": [
+          {
+            "exchange": "EBS",
+            "quoteType": "INDEX",
+            "symbol": "^SSMI",
+            "index": "quotes",
+            "score": 10007000,
+            "typeDisp": "Index",
+            "exchDisp": "Swiss",
+            "isYahooFinance": true
+          }
+        ],
+        "news": [],
+        "nav": [],
+        "lists": [],
+        "researchReports": [],
+        "screenerFieldResults": [],
+        "totalTime": 65,
+        "timeTakenForQuotes": 421,
+        "timeTakenForNews": 700,
+        "timeTakenForAlgowatchlist": 400,
+        "timeTakenForPredefinedScreener": 400,
+        "timeTakenForCrunchbase": 400,
+        "timeTakenForNav": 400,
+        "timeTakenForResearchReports": 0,
+        "timeTakenForScreenerField": 0,
+        "timeTakenForCulturalAssets": 0,
+        "timeTakenForSearchLists": 0
+      },
+      "marketMovers": {
+        "gainers": [
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 49955,
+            "flag": {
+              "name": "Sonova H Ag",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Sonova H Ag",
+              "title": "Sonova H Ag",
+              "derived": false,
+              "url": "/equities/sonova-h-ag"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "SOON",
+            "exchange": "Switzerland",
+            "volume": "219648",
+            "last": "262.10",
+            "change": "8.60",
+            "changePercent": "3.39",
+            "changeDirection": "Up",
+            "avgVolume": "158966",
+            "_liveVolume": 219648
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 338,
+            "flag": {
+              "name": "Lonza Group",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Lonza Group",
+              "title": "Lonza Group AG",
+              "derived": false,
+              "url": "/equities/lonza-grp"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "LONN",
+            "exchange": "Switzerland",
+            "volume": "155105",
+            "last": "584.80",
+            "change": "13.60",
+            "changePercent": "2.38",
+            "changeDirection": "Up",
+            "avgVolume": "183979",
+            "_liveVolume": 155105
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 324,
+            "flag": {
+              "name": "Logitech",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Logitech",
+              "title": "Logitech International SA",
+              "derived": false,
+              "url": "/equities/logitech"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "LOGN",
+            "exchange": "Switzerland",
+            "volume": "820418",
+            "last": "66.76",
+            "change": "1.12",
+            "changePercent": "1.71",
+            "changeDirection": "Up",
+            "avgVolume": "778729",
+            "_liveVolume": 820418
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 49833,
+            "flag": {
+              "name": "Partners Group",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Partners Group",
+              "title": "Partners Group",
+              "derived": false,
+              "url": "/equities/partners-group"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "PGHN",
+            "exchange": "Switzerland",
+            "volume": "45424",
+            "last": "1,114.00",
+            "change": "15.50",
+            "changePercent": "1.41",
+            "changeDirection": "Up",
+            "avgVolume": "74031",
+            "_liveVolume": 45424
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 339,
+            "flag": {
+              "name": "Swisscom",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Swisscom",
+              "title": "Swisscom AG",
+              "derived": false,
+              "url": "/equities/swisscom"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "SCMN",
+            "exchange": "Switzerland",
+            "volume": "75422",
+            "last": "544.00",
+            "change": "4.00",
+            "changePercent": "0.74",
+            "changeDirection": "Up",
+            "avgVolume": "136574",
+            "_liveVolume": 75422
+          }
+        ],
+        "losers": [
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 49835,
+            "flag": {
+              "name": "Kuehne & Nagel",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Kuehne & Nagel",
+              "title": "Kuehne & Nagel",
+              "derived": false,
+              "url": "/equities/kuehne---nagel"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "KNIN",
+            "exchange": "Switzerland",
+            "volume": "282946",
+            "last": "177.85",
+            "change": "-5.95",
+            "changePercent": "-3.24",
+            "changeDirection": "Down",
+            "avgVolume": "277562",
+            "_liveVolume": 282946
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 337,
+            "flag": {
+              "name": "Roche Holding Participation",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Roche Holding Participation",
+              "title": "Roche Holding AG Participation",
+              "derived": false,
+              "url": "/equities/roche-hldg"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "ROG",
+            "exchange": "Switzerland",
+            "volume": "1182585",
+            "last": "257.60",
+            "change": "-2.30",
+            "changePercent": "-0.88",
+            "changeDirection": "Down",
+            "avgVolume": "1459351",
+            "_liveVolume": 1182585
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 329,
+            "flag": {
+              "name": "Zurich Insurance Group",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Zurich Insurance Group",
+              "title": "Zurich Insurance Group AG",
+              "derived": false,
+              "url": "/equities/zurich-fin"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "ZURN",
+            "exchange": "Switzerland",
+            "volume": "200788",
+            "last": "581.00",
+            "change": "-2.00",
+            "changePercent": "-0.34",
+            "changeDirection": "Down",
+            "avgVolume": "331151",
+            "_liveVolume": 200788
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 332,
+            "flag": {
+              "name": "Novartis",
+              "code": "CH"
+            },
+            "name": {
+              "label": "Novartis",
+              "title": "Novartis AG",
+              "derived": false,
+              "url": "/equities/novartis"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "NOVN",
+            "exchange": "Switzerland",
+            "volume": "3120366",
+            "last": "90.91",
+            "change": "-0.20",
+            "changePercent": "-0.22",
+            "changeDirection": "Down",
+            "avgVolume": "4316877",
+            "_liveVolume": 3120366
+          },
+          {
+            "mobx_easy_id": "_j1w740r4y",
+            "month": "",
+            "instrumentId": 320,
+            "flag": {
+              "name": "ABB",
+              "code": "CH"
+            },
+            "name": {
+              "label": "ABB",
+              "title": "ABB Ltd",
+              "derived": false,
+              "url": "/equities/abb-ltd"
+            },
+            "precision": {
+              "change": 2,
+              "changePercent": 2
+            },
+            "symbol": "ABBN",
+            "exchange": "Switzerland",
+            "volume": "1948667",
+            "last": "45.07",
+            "change": "0.02",
+            "changePercent": "0.04",
+            "changeDirection": "Up",
+            "avgVolume": "3658311",
+            "_liveVolume": 1948667
+          }
+        ]
+      }
+    }
+  ]
+}
