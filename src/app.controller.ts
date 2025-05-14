@@ -288,7 +288,7 @@ export class AppController {
     return results;
   }
 
-  // @UseInterceptors(CacheInterceptor)
+  @UseInterceptors(CacheInterceptor)
   @Get('historical/:symbol')
   async historical(@Param() params: any): Promise<object> {
     // declare a date today
