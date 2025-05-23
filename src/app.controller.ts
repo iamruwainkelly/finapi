@@ -6,7 +6,14 @@ import * as cheerio from 'cheerio';
 import * as fs from 'node:fs';
 import { ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+
+// entities
 import { Quote } from './entities/quote.entity';
+// history
+import { History } from './entities/history.entity';
+// indexes
+import { Index } from './entities/index.entity';
+
 import { DataSource } from 'typeorm';
 import e from 'express';
 
@@ -160,37 +167,24 @@ export class AppController {
     private dataSource: DataSource,
   ) {}
 
+  // getHello
+  @Get()
+  getHello(): string {
+    return 'Hello World!';
+  }
+
   @ApiExcludeEndpoint()
   @Get('/test')
-  async get(): Promise<string> {
-    // get single record from the database, where symbol is ^GSPC
-    const quote = await this.dataSource
-      .getRepository(Quote)
-      .findOneBy({ symbol: '^GSPC' });
+  async get(): Promise<object> {
+    const query = 'TSLA';
 
-    // if the record does not exist, create it
-    if (!quote) {
-      const newQuote = new Quote();
-      newQuote.symbol = '^GSPC';
-      newQuote.json = await yahooFinance.quote('^GSPC');
-      await this.dataSource.getRepository(Quote).save(newQuote);
-      return newQuote.json;
-    }
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    // if the record exists, check if it is older than 1 minute
-    const now = new Date();
-    const lastUpdated = new Date(quote.updated);
-    const diff = Math.abs(now.getTime() - lastUpdated.getTime());
-    const diffMinutes = Math.ceil(diff / (1000 * 60));
+    const queryOptions = { period1: yesterday /* ... */ };
+    const result = await yahooFinance.historical(query, queryOptions);
 
-    // if the record is older than 1 minute, update it
-    if (diffMinutes > 1) {
-      quote.json = await yahooFinance.quote('^GSPC');
-      quote.updated = Date.now();
-      await this.dataSource.getRepository(Quote).save(quote);
-    }
-
-    return quote.json;
+    return result;
   }
 
   @UseInterceptors(CacheInterceptor)
@@ -260,23 +254,6 @@ export class AppController {
   async quotes(@Query('symbols') symbols: string): Promise<object> {
     const symbolArray = symbols.split(',');
 
-    // comma separated string to array
-
-    //return {
-    //   symbols: symbols,
-    // };
-
-    //const results = await yahooFinance.quoteCombine(['^GSPC', '^IXIC'], {
-    // fields: [
-    //   'symbol',
-    //   'longName',
-    //   'regularMarketPrice',
-    //   'regularMarketChange',
-    //   'regularMarketChangePercent',
-    //   'regularMarketDayRange',
-    // ],
-    //});
-
     // loop through the symbolz and call the getStockData function
     const results = await Promise.all(
       symbolArray.map(async (symbol) => {
@@ -284,6 +261,21 @@ export class AppController {
         return result;
       }),
     );
+
+    return results;
+  }
+
+  @Get('quotes-multi')
+  async quotesMulti(): Promise<object> {
+    const indexSymbols = indexes.map((index) => index.yahooFinanceSymbol);
+
+    // run all 4 functions in parallel
+    const promises = indexSymbols.map(async (symbol) => {
+      const quote = await this.quote({ symbol });
+    });
+
+    // wait for all promises to resolve
+    const results = await Promise.all(promises);
 
     return results;
   }
@@ -429,10 +421,22 @@ export class AppController {
 
     // run all 4 functions in parallel
     const promises = indexSymbols.map(async (symbol) => {
+      // log current time
+      console.log('quote - before', new Date());
       const quote = await this.quote({ symbol });
+      console.log('quote - after', new Date());
+
+      console.log('historical - before', new Date());
       const historical = await this.historical({ symbol });
+      console.log('historical - after', new Date());
+
+      console.log('search - before', new Date());
       const search = await this.search({ symbol });
+      console.log('search - after', new Date());
+
+      console.log('marketMovers - before', new Date());
       const marketMovers = await this.marketMovers({ symbol });
+      console.log('marketMovers - after', new Date());
 
       return {
         symbol: symbol,
@@ -568,7 +572,10 @@ export class AppController {
     await browser.close();
 
     // save the content to a file
-    fs.writeFileSync(`market-movers-${index?.investingSymbol}.html`, content);
+    fs.writeFileSync(
+      `./downloads/market-movers-${index?.investingSymbol}.html`,
+      content,
+    );
 
     // load the content into cheerio
     const $ = cheerio.load(content);
@@ -645,6 +652,131 @@ export class AppController {
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     return { hello: 'world' };
+  }
+
+  // getIndexQuotes
+  @Get('getIndexQuotes')
+  async getIndexQuotes(): Promise<object> {
+    // get all indexes from the database
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
+
+    // perform a quoyteCombine for each index
+    const results = await Promise.all(
+      indexes.map(async (index) => {
+        const result = await yahooFinance.quoteCombine(index.symbol, {
+          fields: [
+            'regularMarketPrice',
+            'regularMarketChangePercent',
+            'longName',
+            'regularMarketPreviousClose',
+            'quoteType',
+            'averageDailyVolume10Day',
+          ],
+        });
+
+        // save the result to the database
+        const quote = new Quote();
+        quote.symbol = index.symbol;
+        quote.json = result;
+        await this.dataSource.getRepository(Quote).save(quote);
+
+        return result;
+      }),
+    );
+
+    return results;
+  }
+
+  // getIndexHistorical
+  @Get('getHistorical')
+  async getHistorical(): Promise<object> {
+    // declare a return object
+    const returnObject = {
+      success: true,
+      message: 'Historical data updated successfully',
+    };
+
+    // get all indexes from the database
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
+
+    const historicalRequests = [];
+
+    // loop through the indexes
+    for (const index of indexes) {
+      // get the historical data (last 252+12 records) for the index from the database
+      // where the created is today
+      // and the symbol is the same as the index symbol
+      const indexHistorical = await this.dataSource
+        .getRepository(History)
+        .createQueryBuilder('history')
+        .where('history.symbol = :symbol', { symbol: index.symbol })
+        .andWhere('history.created > :created', {
+          created: new Date(
+            new Date().setDate(new Date().getDate() - 1),
+          ).getTime(),
+        })
+        .getMany();
+
+      console.log('indexHistorical', index, indexHistorical.length);
+
+      // if the index historical data is not found, get the historical data from Yahoo Finance
+      if (indexHistorical.length === 0) {
+        const queryIndex = index.symbol;
+        // set the start date to 2 year ago
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 2);
+        const queryOptions = {
+          period1: startDate,
+        };
+
+        // add request to a promise array
+        historicalRequests.push({ queryIndex, queryOptions });
+      }
+    }
+
+    // execute all the requests in parallel
+    await Promise.all(
+      historicalRequests.map(async (request) => {
+        const result: YahooHistoric[] = await yahooFinance.historical(
+          request.queryIndex,
+          request.queryOptions,
+        );
+
+        // delete all records from the database where the symbol is the same as the index symbol
+        await this.dataSource
+          .getRepository(History)
+          .createQueryBuilder('history')
+          .delete()
+          .where('history.symbol = :symbol', { symbol: request.queryIndex })
+          .execute();
+
+        // loop through the results and save them to the database
+        for (const r of result) {
+          const history = new History();
+          history.symbol = request.queryIndex;
+          history.date = r.date.getTime() / 1000;
+          // store full datetime string
+          history.dateString = r.date.toISOString();
+          history.open = r.open;
+          history.high = r.high;
+          history.low = r.low;
+          history.close = r.close;
+          history.adjClose = r.adjClose;
+          history.volume = r.volume;
+
+          await this.dataSource.getRepository(History).save(history);
+        }
+      }),
+    );
+
+    const result = null;
+    return { hello: 'world', result, returnObject };
   }
 }
 

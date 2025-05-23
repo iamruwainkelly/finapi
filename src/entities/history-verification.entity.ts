@@ -7,20 +7,12 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Quote {
+export class HistoryVerification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  symbol: string;
-
-  // add a column that links to the index table
-  //@Column({ nullable: true })
-  //indexId: number;
-
-  // store json
-  @Column({ type: 'json', nullable: true })
-  json: any;
+  @Column({ type: 'date', nullable: true })
+  lastRanDate: number;
 
   @CreateDateColumn({ default: () => Date.now() })
   created: number;

@@ -7,20 +7,19 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Quote {
+export class Index {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   symbol: string;
 
-  // add a column that links to the index table
-  //@Column({ nullable: true })
-  //indexId: number;
+  // investingSymbol
+  @Column({ nullable: true })
+  investingSymbol: string;
 
-  // store json
-  @Column({ type: 'json', nullable: true })
-  json: any;
+  @Column({ nullable: true })
+  investingUrlName: string;
 
   @CreateDateColumn({ default: () => Date.now() })
   created: number;

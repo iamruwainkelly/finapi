@@ -15,7 +15,6 @@ import { DataSource } from 'typeorm';
     }),
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
-
       database: 'data.db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
@@ -26,6 +25,7 @@ import { DataSource } from 'typeorm';
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {
+    /*
     this.dataSource
       .initialize()
       .then(() => {
@@ -33,6 +33,6 @@ export class AppModule {
       })
       .catch((err) => {
         console.error('Error during Data Source initialization', err);
-      });
+      });*/
   }
 }
