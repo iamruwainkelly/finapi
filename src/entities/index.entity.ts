@@ -4,7 +4,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Stock } from './stock.entity';
 
 @Entity()
 export class Index {
@@ -20,6 +22,9 @@ export class Index {
 
   @Column({ nullable: true })
   investingUrlName: string;
+
+  @OneToMany(() => Stock, (stock) => stock.index)
+  stocks: Stock[];
 
   @CreateDateColumn({ default: () => Date.now() })
   created: number;

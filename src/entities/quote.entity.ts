@@ -14,10 +14,6 @@ export class Quote {
   @Column()
   symbol: string;
 
-  // add a column that links to the index table
-  //@Column({ nullable: true })
-  //indexId: number;
-
   // store json
   @Column({ type: 'json', nullable: true })
   json: any;

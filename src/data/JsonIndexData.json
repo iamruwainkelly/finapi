@@ -1,0 +1,48 @@
+[
+  {
+    "yahooFinanceSymbol": "^GSPC",
+    "investingSymbol": "SPX",
+    "investingUrlName": "us-spx-500",
+    "stockConfig": {
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/refs/heads/main/data/constituents.csv",
+      "sourceType": "csv",
+      "symbolKey": "Symbol",
+      "nameKey": "Security"
+    }
+  },
+  {
+    "yahooFinanceSymbol": "^IXIC",
+    "investingSymbol": "IXIC",
+    "investingUrlName": "nasdaq-composite",
+    "stockConfig": {
+      "sourceUrl": "https://raw.githubusercontent.com/datasets/nasdaq-listings/refs/heads/main/data/nasdaq-listed-symbols.csv",
+      "sourceType": "csv",
+      "symbolKey": "Symbol",
+      "nameKey": "Security Name"
+    }
+  },
+  {
+    "yahooFinanceSymbol": "^STOXX50E",
+    "investingSymbol": "STOXX50E",
+    "investingUrlName": "eu-stoxx50",
+    "stockConfig": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/EURO_STOXX_50",
+      "sourceType": "wikipedia",
+      "tableCssPath": "table#constituents",
+      "symbolKey": "Ticker",
+      "nameKey": "Name"
+    }
+  },
+  {
+    "yahooFinanceSymbol": "^SSMI",
+    "investingSymbol": "SMI",
+    "investingUrlName": "switzerland-20",
+    "stockConfig": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Swiss_Market_Index",
+      "sourceType": "wikipedia",
+      "tableCssPath": "div.mw-heading:has(> h3#Current_constituents) ~ table",
+      "symbolKey": "Ticker",
+      "nameKey": "Name"
+    }
+  }
+]

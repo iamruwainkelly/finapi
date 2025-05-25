@@ -1,29 +1,26 @@
 ## Todo
 
-- speed up /dashboard call
+### Targets
 
-  - single call to get all 4 symbols
-  - example (start from )
-  -
+370 mins = 6h, 10m
 
-  ```
+10:00
+14:00 <- without charts
+16:00 <- should be done with all
 
+## tables
 
+- index
+  - name
+  - symbol [GSPC, IXIC, STOXX50E, SSMI]
+  - created
+  - modified
+  - investingSymbol
+  - investingUrlName
+- quote
 
-  ```
-
-  ## tables
-
-  - index
-    - name
-    - symbol [GSPC, IXIC, STOXX50E, SSMI]
-    - created
-    - modified
-    - investingSymbol
-    - investingUrlName
-  - quote
-    - index.id
-    - (all other fields comes here)
+  - index.id
+  - (all other fields comes here)
 
 - compare quote x 4 vs sing combined call
 - see how fast these 2 compare

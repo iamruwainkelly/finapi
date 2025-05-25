@@ -15,7 +15,7 @@ import { History } from './entities/history.entity';
 import { Index } from './entities/index.entity';
 
 import { DataSource } from 'typeorm';
-import e from 'express';
+import { PerformanceDays } from './typings/PerformanceDats';
 
 interface YahooHistoric {
   adjClose?: number | undefined;
@@ -104,11 +104,6 @@ const calculateHistoricChangeByDate = (
   };
 };
 
-const baseUrls = {
-  investing: 'https://za.investing.com/indices/',
-  yahooFinance: 'https://finance.yahoo.com/',
-};
-
 const indexes = [
   {
     yahooFinanceSymbol: '^GSPC',
@@ -171,20 +166,6 @@ export class AppController {
   @Get()
   getHello(): string {
     return 'Hello World!';
-  }
-
-  @ApiExcludeEndpoint()
-  @Get('/test')
-  async get(): Promise<object> {
-    const query = 'TSLA';
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const queryOptions = { period1: yesterday /* ... */ };
-    const result = await yahooFinance.historical(query, queryOptions);
-
-    return result;
   }
 
   @UseInterceptors(CacheInterceptor)
@@ -280,93 +261,171 @@ export class AppController {
     return results;
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @Get('historical/:symbol')
-  async historical(@Param() params: any): Promise<object> {
-    // declare a date today
-    const today = new Date();
+  @Get('history/:symbol')
+  async history(@Param() params: any): Promise<History[]> {
+    let refetchHistory = false;
 
-    // declare a date, 13 months ago
-    const thirteenMonthsAgo = new Date(today);
-    thirteenMonthsAgo.setMonth(today.getMonth() - 13);
+    // get the history from the database, where symbol is the same as params.symbol
+    // limit to the last 252 + 21 records
+    const history = await this.dataSource
+      .getRepository(History)
+      .createQueryBuilder('history')
+      .where('history.symbol = :symbol', { symbol: params.symbol })
+      .orderBy('history.date', 'ASC')
+      .getMany();
 
-    const query = params.symbol;
-    const queryOptions = { period1: thirteenMonthsAgo };
-    const results: YahooHistoric[] = await yahooFinance.historical(
-      query,
-      queryOptions,
-    );
+    // if there is history, get the created date of the last entry
+    // if that data is not today, delete all history for that symbol
+    if (history.length > 0) {
+      // is this at least 252 + 21 records
+      if (history.length < 252 + 21) {
+        refetchHistory = true;
+      } else {
+        // get the last record in history
+        const lastPriceEntry = history[history.length - 1];
 
-    // get index of the last entry in results
-    const lastIndex = results.length - 1;
-    const lastEntry = results[lastIndex];
+        // check if the last entry 'created' is today or not
+        const lastCreatedDate = new Date(lastPriceEntry.created);
+        const today = new Date();
 
-    // get the entry, 5 entries before the last entry
-    const fiveDayChangeEntry = results[lastIndex - 5];
-    // get the entry, 30 entries before the last entry
-    const thirtyDayChangeEntry = results[lastIndex - 30];
-    // get the entry, 60 entries before the last entry
-    const sixtyDayChangeEntry = results[lastIndex - 60];
+        // set the time of today to 00:00:00
+        lastCreatedDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
 
-    // calculate the change between the last entry and the entry 5 days ago
-    const fiveDayChange = calculateChange(
-      lastEntry.close,
-      fiveDayChangeEntry.close ?? 0,
-    );
+        // calculate the difference in days between the last entry date and today
+        const diffTime = Math.abs(today.getTime() - lastCreatedDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // get the date, one month ago
-    const oneMonthAgo = new Date(today);
-    oneMonthAgo.setDate(today.getDate() - 30);
+        // if the last entry is older than 1 day, refetch history
+        if (diffDays > 1) {
+          refetchHistory = true;
+        }
+      }
+    } else {
+      // if there is no history, we need to refetch it
+      refetchHistory = true;
+    }
 
-    // calculate the change between the last entry and the entry one month ago
-    const oneMonthChange = calculateHistoricChangeByDate(results, oneMonthAgo);
+    // if we need to refetch history, delete all history for that symbol
+    if (refetchHistory) {
+      await this.dataSource
+        .getRepository(History)
+        .createQueryBuilder('history')
+        .delete()
+        .where('history.symbol = :symbol', { symbol: params.symbol })
+        .execute();
 
-    // declare a date threeMonthsAgo
-    const threeMonthsAgo = new Date(today);
-    threeMonthsAgo.setMonth(today.getMonth() - 3);
+      // fetch the history from Yahoo Finance
+      const query = params.symbol;
+      // set the start date to 2 year ago
+      const startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 2);
+      const queryOptions = {
+        period1: startDate,
+      };
+      const results: YahooHistoric[] = await yahooFinance.historical(
+        query,
+        queryOptions,
+      );
 
-    // calculate the change between the last entry and the entry three months ago
-    const threeMonthChange = calculateHistoricChangeByDate(
-      results,
-      threeMonthsAgo,
-    );
+      // loop through the results and save them to the database
+      for (const r of results) {
+        const history = new History();
+        history.symbol = params.symbol;
+        history.date = r.date.getTime();
+        // store full datetime string
+        history.dateString = r.date.toISOString();
+        history.open = r.open;
+        history.high = r.high;
+        history.low = r.low;
+        history.close = r.close;
+        history.adjClose = r.adjClose;
+        history.volume = r.volume;
 
-    // sixMonthChange
-    const sixMonthChange = calculateHistoricChangeByDate(
-      results,
-      new Date(today.setMonth(today.getMonth() - 6)),
-    );
+        await this.dataSource.getRepository(History).save(history);
+      }
+    }
 
-    // oneYearChange
-    const oneYearChange = calculateHistoricChangeByDate(
-      results,
-      new Date(today.setFullYear(today.getFullYear() - 1)),
-    );
+    return await this.dataSource
+      .getRepository(History)
+      .createQueryBuilder('history')
+      .where('history.symbol = :symbol', { symbol: params.symbol })
+      .orderBy('history.date', 'ASC')
+      .getMany();
+  }
+
+  // create a function that take in a interger that is used to take the last n records from the history
+  // and return the priceChange and percentageChange of the stock for the last n record
+
+  async performanceDays(
+    symbol: string,
+    days: number,
+  ): Promise<PerformanceDays> {
+    // ensure we have the history for the symbol
+    const history = await this.history({ symbol: symbol });
+
+    // Sort history by date in ascending order
+    history.sort((a, b) => a.date - b.date);
+
+    // use the last n records
+    const lastNEntries = history.slice(-days);
+
+    const first = lastNEntries[0].close;
+    const last = lastNEntries[lastNEntries.length - 1].close;
+
+    const priceChange = last - first;
+    const priceChangePercentage = (priceChange / first) * 100;
+
+    return {
+      priceChange: priceChange,
+      priceChangePercentage: priceChangePercentage,
+    };
+  }
+
+  @Get('performance/:symbol')
+  async performance(@Param() params: any): Promise<object> {
+    // ensure we have the history for the symbol
+    const history = await this.history({ symbol: params.symbol });
+
+    // Sort history by date in ascending order
+    history.sort((a, b) => a.date - b.date);
+    // 5 days
+    const last5 = await this.performanceDays(params.symbol, 5);
+    // 1 month
+    const last21 = await this.performanceDays(params.symbol, 21);
+    // 3 months
+    // 63 days is approximately 3 months of trading days
+    const last63 = await this.performanceDays(params.symbol, 63);
+    // 6 months
+    const last126 = await this.performanceDays(params.symbol, 126);
+    // 1 year
+    // 252 days is approximately 1 year of trading days
+    const last255 = await this.performanceDays(params.symbol, 255);
 
     return {
       symbol: params.symbol,
-      lastPrice: lastEntry.close,
-      lastPriceDate: lastEntry.date,
+      lastPrice: 0,
+      lastPriceDate: 1,
       performance: {
         fiveDay: {
-          change: fiveDayChange.change,
-          changePercent: fiveDayChange.changePercent,
+          change: last5.priceChange,
+          changePercent: last5.priceChangePercentage,
         },
         oneMonth: {
-          change: oneMonthChange.change,
-          changePercent: oneMonthChange.changePercent,
+          change: last21.priceChange,
+          changePercent: last21.priceChangePercentage,
         },
         threeMonths: {
-          change: threeMonthChange.change,
-          changePercent: threeMonthChange.changePercent,
+          change: last63.priceChange,
+          changePercent: last63.priceChangePercentage,
         },
         sixMonths: {
-          change: sixMonthChange.change,
-          changePercent: sixMonthChange.changePercent,
+          change: last126.priceChange,
+          changePercent: last126.priceChangePercentage,
         },
         oneYear: {
-          change: oneYearChange.change,
-          changePercent: oneYearChange.changePercent,
+          change: last255.priceChange,
+          changePercent: last255.priceChangePercentage,
         },
       },
     };
@@ -401,7 +460,7 @@ export class AppController {
   @Get('dashboard/:symbol')
   async dashboardSymbol(@Param() params: any): Promise<object> {
     const quote = await this.quote(params);
-    const historical = await this.historical(params);
+    const historical = await this.history(params);
     const search = await this.search(params);
     const marketMovers = await this.marketMovers(params);
 
@@ -427,7 +486,7 @@ export class AppController {
       console.log('quote - after', new Date());
 
       console.log('historical - before', new Date());
-      const historical = await this.historical({ symbol });
+      const historical = await this.history({ symbol });
       console.log('historical - after', new Date());
 
       console.log('search - before', new Date());

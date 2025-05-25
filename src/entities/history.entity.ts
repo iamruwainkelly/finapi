@@ -38,9 +38,9 @@ export class History {
   @Column({ type: 'float', nullable: true })
   adjClose: number | undefined;
 
-  @CreateDateColumn({ default: () => Date.now() })
+  @CreateDateColumn({ default: () => new Date().getTime() })
   created: number;
 
-  @UpdateDateColumn({ default: () => Date.now() })
+  @UpdateDateColumn({ default: () => new Date().getTime() })
   updated: number;
 }
