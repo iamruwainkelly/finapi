@@ -18,9 +18,9 @@ export class Quote {
   @Column({ type: 'json', nullable: true })
   json: any;
 
-  @CreateDateColumn({ default: () => Date.now() })
+  @CreateDateColumn({ default: () => new Date().getTime() })
   created: number;
 
-  @UpdateDateColumn({ default: () => Date.now() })
+  @UpdateDateColumn({ default: () => new Date().getTime() })
   updated: number;
 }

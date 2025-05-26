@@ -5,7 +5,9 @@ import { chromium, LaunchOptions } from 'playwright';
 import * as cheerio from 'cheerio';
 import * as fs from 'node:fs';
 import { ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheModule, CacheTTL } from '@nestjs/cache-manager';
+import * as ss from 'simple-statistics';
+import { mean, re, std } from 'mathjs';
 
 // entities
 import { Quote } from './entities/quote.entity';
@@ -16,6 +18,14 @@ import { Index } from './entities/index.entity';
 
 import { DataSource } from 'typeorm';
 import { PerformanceDays } from './typings/PerformanceDats';
+import { IndexPerformance } from './typings/IndexPerformance';
+import { IndexQuote } from './typings/IndexQuote';
+
+// prediction
+// @ts-ignore
+import * as prediction from './helpers/prediction.js';
+
+// prediction.predict = prediction.predict.bind(prediction);
 
 interface YahooHistoric {
   adjClose?: number | undefined;
@@ -162,10 +172,16 @@ export class AppController {
     private dataSource: DataSource,
   ) {}
 
-  // getHello
-  @Get()
-  getHello(): string {
-    return 'Hello World!';
+  @UseInterceptors(CacheInterceptor)
+  // cache for 1 day
+  @CacheTTL(60 * 60 * 24)
+  @Get('getPrediction/:symbol')
+  async getPrediction(@Param() params: any): Promise<object> {
+    const p = await prediction.predict(params.symbol);
+    return {
+      symbol: params.symbol,
+      prediction: p,
+    };
   }
 
   @UseInterceptors(CacheInterceptor)
@@ -208,40 +224,6 @@ export class AppController {
     const results = await yahooFinance.dailyGainers(params.symbol);
 
     //results[0].
-
-    return results;
-  }
-
-  getStockData = async (symbol: string) => {
-    try {
-      const result = await yahooFinance.quoteCombine(symbol, {
-        fields: [
-          'regularMarketPrice',
-          'regularMarketChangePercent',
-          'longName',
-          'regularMarketPreviousClose',
-          'quoteType',
-          'averageDailyVolume10Day',
-        ],
-      });
-      console.log(result);
-      return result;
-    } catch (error) {
-      console.error('Error fetching stock data:', error);
-    }
-  };
-
-  @Get('quotes')
-  async quotes(@Query('symbols') symbols: string): Promise<object> {
-    const symbolArray = symbols.split(',');
-
-    // loop through the symbolz and call the getStockData function
-    const results = await Promise.all(
-      symbolArray.map(async (symbol) => {
-        const result = await yahooFinance.quoteCombine(symbol);
-        return result;
-      }),
-    );
 
     return results;
   }
@@ -383,7 +365,7 @@ export class AppController {
   }
 
   @Get('performance/:symbol')
-  async performance(@Param() params: any): Promise<object> {
+  async performance(@Param() params: any): Promise<IndexPerformance> {
     // ensure we have the history for the symbol
     const history = await this.history({ symbol: params.symbol });
 
@@ -404,8 +386,6 @@ export class AppController {
 
     return {
       symbol: params.symbol,
-      lastPrice: 0,
-      lastPriceDate: 1,
       performance: {
         fiveDay: {
           change: last5.priceChange,
@@ -630,12 +610,6 @@ export class AppController {
     const content = await page.content();
     await browser.close();
 
-    // save the content to a file
-    fs.writeFileSync(
-      `./downloads/market-movers-${index?.investingSymbol}.html`,
-      content,
-    );
-
     // load the content into cheerio
     const $ = cheerio.load(content);
 
@@ -713,50 +687,15 @@ export class AppController {
     return { hello: 'world' };
   }
 
+  // **************************************************************
+  // Index related endpoints
+  // **************************************************************
+
   // getIndexQuotes
   @Get('getIndexQuotes')
-  async getIndexQuotes(): Promise<object> {
-    // get all indexes from the database
-    const indexes = await this.dataSource
-      .getRepository(Index)
-      .createQueryBuilder('index')
-      .getMany();
-
-    // perform a quoyteCombine for each index
-    const results = await Promise.all(
-      indexes.map(async (index) => {
-        const result = await yahooFinance.quoteCombine(index.symbol, {
-          fields: [
-            'regularMarketPrice',
-            'regularMarketChangePercent',
-            'longName',
-            'regularMarketPreviousClose',
-            'quoteType',
-            'averageDailyVolume10Day',
-          ],
-        });
-
-        // save the result to the database
-        const quote = new Quote();
-        quote.symbol = index.symbol;
-        quote.json = result;
-        await this.dataSource.getRepository(Quote).save(quote);
-
-        return result;
-      }),
-    );
-
-    return results;
-  }
-
-  // getIndexHistorical
-  @Get('getHistorical')
-  async getHistorical(): Promise<object> {
-    // declare a return object
-    const returnObject = {
-      success: true,
-      message: 'Historical data updated successfully',
-    };
+  async getIndexQuotes(): Promise<IndexQuote[]> {
+    // declare avar to check if we need to refetch quotes
+    let refetch = false;
 
     // get all indexes from the database
     const indexes = await this.dataSource
@@ -764,78 +703,230 @@ export class AppController {
       .createQueryBuilder('index')
       .getMany();
 
-    const historicalRequests = [];
+    // get quoutes for these indexs from the db
+    // if the quote already exists, skip it
+    const existingQuotes = await this.dataSource
+      .getRepository(Quote)
+      .createQueryBuilder('quote')
+      .where('quote.symbol IN (:...symbols)', {
+        symbols: indexes.map((index) => index.symbol),
+      })
+      .getMany();
 
-    // loop through the indexes
-    for (const index of indexes) {
-      // get the historical data (last 252+12 records) for the index from the database
-      // where the created is today
-      // and the symbol is the same as the index symbol
-      const indexHistorical = await this.dataSource
-        .getRepository(History)
-        .createQueryBuilder('history')
-        .where('history.symbol = :symbol', { symbol: index.symbol })
-        .andWhere('history.created > :created', {
-          created: new Date(
-            new Date().setDate(new Date().getDate() - 1),
-          ).getTime(),
-        })
-        .getMany();
-
-      console.log('indexHistorical', index, indexHistorical.length);
-
-      // if the index historical data is not found, get the historical data from Yahoo Finance
-      if (indexHistorical.length === 0) {
-        const queryIndex = index.symbol;
-        // set the start date to 2 year ago
-        const startDate = new Date();
-        startDate.setFullYear(startDate.getFullYear() - 2);
-        const queryOptions = {
-          period1: startDate,
-        };
-
-        // add request to a promise array
-        historicalRequests.push({ queryIndex, queryOptions });
+    // evaluate whether we need to refetch quotes
+    if (existingQuotes.length < indexes.length) {
+      // if the number of existing quotes is less than the number of indexes, we need to refetch quotes
+      refetch = true;
+    } else {
+      // check if any of the existing quotes are older than 5 minutes
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+      for (const quote of existingQuotes) {
+        const lastUpdated = new Date(quote.updated);
+        if (lastUpdated < fiveMinutesAgo) {
+          refetch = true;
+          break;
+        }
       }
     }
 
-    // execute all the requests in parallel
-    await Promise.all(
-      historicalRequests.map(async (request) => {
-        const result: YahooHistoric[] = await yahooFinance.historical(
-          request.queryIndex,
-          request.queryOptions,
-        );
+    // if we need to refetch quotes, delete all quotes for these indexes
+    if (refetch) {
+      await this.dataSource
+        .getRepository(Quote)
+        .createQueryBuilder('quote')
+        .delete()
+        .where('quote.symbol IN (:...symbols)', {
+          symbols: indexes.map((index) => index.symbol),
+        })
+        .execute();
 
-        // delete all records from the database where the symbol is the same as the index symbol
-        await this.dataSource
-          .getRepository(History)
-          .createQueryBuilder('history')
-          .delete()
-          .where('history.symbol = :symbol', { symbol: request.queryIndex })
-          .execute();
+      console.log(
+        'Refetching quotes for indexes:',
+        indexes.map((i) => i.symbol),
+      );
 
-        // loop through the results and save them to the database
-        for (const r of result) {
-          const history = new History();
-          history.symbol = request.queryIndex;
-          history.date = r.date.getTime() / 1000;
-          // store full datetime string
-          history.dateString = r.date.toISOString();
-          history.open = r.open;
-          history.high = r.high;
-          history.low = r.low;
-          history.close = r.close;
-          history.adjClose = r.adjClose;
-          history.volume = r.volume;
+      // perform a quoteCombine for each index
+      await Promise.all(
+        indexes.map(async (index) => {
+          const result = await yahooFinance.quoteCombine(index.symbol, {
+            fields: [
+              'regularMarketPrice',
+              'regularMarketChangePercent',
+              'longName',
+              'regularMarketPreviousClose',
+              'quoteType',
+              'averageDailyVolume10Day',
+            ],
+          });
 
-          await this.dataSource.getRepository(History).save(history);
-        }
-      }),
+          // save the result to the database
+          const quote = new Quote();
+          quote.symbol = index.symbol;
+          quote.json = result;
+          await this.dataSource.getRepository(Quote).save(quote);
+        }),
+      );
+    }
+
+    //  get quotes for these indexes from the db
+    const quotes = await this.dataSource
+      .getRepository(Quote)
+      .createQueryBuilder('quote')
+      .where('quote.symbol IN (:...symbols)', {
+        symbols: indexes.map((index) => index.symbol),
+      })
+      .getMany();
+
+    // return only the json field of the quotes
+    const returnObject = quotes.map((quote) => {
+      return {
+        symbol: quote.symbol,
+        quote: quote.json,
+      };
+    });
+
+    return returnObject;
+  }
+
+  @Get('getIndexQuote/:symbol')
+  async getIndexQuote(
+    @Param('symbol') symbol: string,
+  ): Promise<IndexQuote | { error: string }> {
+    await this.getIndexQuotes();
+
+    // get the quote for the symbol from the database
+    const quote = await this.dataSource
+      .getRepository(Quote)
+      .createQueryBuilder('quote')
+      .where('quote.symbol = :symbol', { symbol: symbol })
+      .getOne();
+
+    // if the quote does not exist, return an error
+    if (!quote) {
+      return {
+        error: `Quote for symbol ${symbol} not found.`,
+      };
+    }
+
+    // return the quote if it exists
+    return {
+      symbol: quote.symbol,
+      quote: quote.json,
+    };
+  }
+
+  // getIndexHistorical
+  @Get('getIndexPerformances')
+  async getIndexPerformances(): Promise<IndexPerformance[]> {
+    // get all indexes from the database
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
+
+    // for each index, get the history from this.performance
+    const performancePromises = indexes.map(async (index) => {
+      // get the performance for the index
+      const params = { symbol: index.symbol };
+      const performance = await this.performance(params);
+
+      // return the performance object
+      return performance;
+    });
+
+    // wait for all promises to resolve
+    const performanceResults = await Promise.all(performancePromises);
+
+    // return the performance results
+    return performanceResults;
+  }
+
+  // getIndexPerformance
+  @Get('getIndexPerformance/:symbol')
+  async getIndexPerformance(
+    @Param('symbol') symbol: string,
+  ): Promise<IndexPerformance | { error: string }> {
+    const performances = await this.getIndexPerformances();
+
+    // find the performance for the symbol
+    const performance = performances.find(
+      (p) => p.symbol === symbol.toUpperCase(),
     );
 
-    const result = null;
-    return { hello: 'world', result, returnObject };
+    // if the performance does not exist, return an error
+    if (!performance) {
+      return {
+        error: `Performance for symbol ${symbol} not found.`,
+      };
+    }
+
+    // return the performance if it exists
+    return performance;
+  }
+
+  // getDashboard
+  @Get('getDashboard')
+  async getDashboard(): Promise<object> {
+    // get indexes from the database
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
+
+    // for each index, get the quote, history, search and market movers
+    const dashboardPromises = indexes.map(async (index) => {
+      // get the quote for the index
+      const quote = await this.getIndexQuote(index.symbol);
+
+      // get the history for the index
+      const performance = await this.getIndexPerformance(index.symbol);
+
+      // get the search results for the index
+      //const search = await this.search({ symbol: index.symbol });
+
+      // get the market movers for the index
+      //const marketMovers = await this.marketMovers({ symbol: index.symbol });
+
+      // return the dashboard object for the index
+      return {
+        symbol: index.symbol,
+        quote: quote,
+        performance: performance,
+        //search: search,
+        //marketMovers: marketMovers,
+      };
+    });
+
+    // wait for all promises to resolve
+    const dashboardResults = await Promise.all(dashboardPromises);
+
+    // return the dashboard results
+    return dashboardResults;
+  }
+
+  @UseInterceptors(CacheInterceptor)
+  @Get('getSymbolAnalysis/:index/:symbol')
+  async getSymbolAnalysisByIndex(
+    @Param('index') index: string,
+    @Param('symbol') symbol: string,
+  ): Promise<object | { error: string }> {
+    // ensure the index is in the indexes array
+    const indexObj = indexes.find(
+      (i) => i.yahooFinanceSymbol === index.toUpperCase(),
+    );
+
+    if (!indexObj) {
+      return { error: 'Index not found.' };
+    }
+
+    // analyze the stock
+    try {
+      const analysis = await analyzeStock(indexObj.yahooFinanceSymbol, symbol);
+      return analysis;
+    } catch (error) {
+      return { error: error.message };
+    }
   }
 }
 
@@ -875,4 +966,213 @@ https://www.investing.com/indices/switzerland-20
 https://www.investing.com/indices/us-spx-500
 https://www.investing.com/indices/nasdaq-composite
 https://www.investing.com/indices/eu-stoxx50
+
 */
+
+// **************************************************************
+// Exposures and Contributions
+// **************************************************************
+
+function getReturns(prices: any[]): number[] {
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) {
+    const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
+    returns.push(ret);
+  }
+  return returns;
+}
+
+const today = new Date();
+const startDate = new Date();
+startDate.setFullYear(today.getFullYear() - 1);
+startDate.setDate(startDate.getDate() - 60);
+
+async function fetchHistoricalData(symbol: string) {
+  const result = await yahooFinance.historical(symbol, {
+    period1: startDate,
+    period2: today,
+    interval: '1d',
+  });
+  return result
+    .map((entry) => ({
+      date: entry.date,
+      close: entry.adjClose || entry.close,
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+function getMomentumExposure(ticker: string, historical: any[]) {
+  // const today = new Date();
+  // const startDate = new Date();
+  // startDate.setFullYear(today.getFullYear() - 1);
+  // startDate.setDate(startDate.getDate() - 30); // ensure we get 12+ months of data
+
+  // const historical = await yahooFinance.historical(ticker, {
+  //   period1: startDate,
+  //   period2: today,
+  //   interval: "1d",
+  // });
+
+  if (historical.length < 252 + 21) {
+    throw new Error('Not enough data to calculate momentum exposure.');
+  }
+
+  historical.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+  const price_252 = historical[historical.length - 252].close;
+  const price_21 = historical[historical.length - 21].close;
+
+  const momentumExposure = (price_21 - price_252) / price_252;
+
+  console.log(
+    `Momentum exposure for ${ticker}: ${(momentumExposure * 100).toFixed(2)}%`,
+  );
+  return momentumExposure;
+}
+
+async function analyzeStock(marketIndex: string, ticker: string) {
+  const stockData = await fetchHistoricalData(ticker);
+  const marketData = await fetchHistoricalData(marketIndex);
+
+  const stockPrices = stockData.map((d) => d.close);
+  const marketPrices = marketData.map((d) => d.close);
+
+  const stockReturns = getReturns(stockPrices);
+  const marketReturns = getReturns(marketPrices);
+
+  // Align return series
+  const minLength = Math.min(stockReturns.length, marketReturns.length);
+  const alignedStockReturns = stockReturns.slice(0, minLength);
+  const alignedMarketReturns = marketReturns.slice(0, minLength);
+
+  // MARKET: beta via linear regression
+  const beta_market =
+    ss.linearRegressionLine(
+      ss.linearRegression(
+        alignedMarketReturns.map((x, i) => [x, alignedStockReturns[i]]),
+      ),
+    )(1) - ss.linearRegressionLine(ss.linearRegression([[0, 0]]))(1); // Slope only
+
+  const avg_market_return = mean(alignedMarketReturns);
+  const contribution_market = beta_market * avg_market_return;
+
+  // MOMENTUM: approx. 12-month return minus 1 month (just rough proxy)
+  //const momentum =
+  //    (stockPrices[stockPrices.length - 22] - stockPrices[0]) / stockPrices[0];
+
+  // Calculate 12-month momentum minus last month for GOOG in Node.js
+  // Assuming you have a DataFrame-like structure (e.g., Danfo.js DataFrame) called goog
+  // 252 trading days ≈ 12 months, shift by 21 days (1 month)
+
+  // const adjClose = goog["Adj Close"].values;
+  // let momentumX = new Array(adjClose.length).fill(null);
+  // for (let i = 0; i < adjClose.length; i++) {
+  //   if (i >= 252 + 21) {
+  //     momentum[i] =
+  //       (adjClose[i - 21] - adjClose[i - 252 - 21]) / adjClose[i - 252 - 21];
+  //   }
+  // }
+
+  // const momentum = goog
+  //   .map((row, i, arr) => {
+  //     if (i < 252 + 21) return null;
+  //     return (
+  //       (row.adjclose - arr[i - 252].adjclose) / arr[i - 252].adjclose -
+  //       (row.adjclose - arr[i - 21].adjclose) / arr[i - 21].adjclose
+  //     );
+  //   })
+  //   .filter((x) => x !== null);
+
+  const momentum = getMomentumExposure(ticker, stockData);
+
+  // VOLATILITY: inverse of standard deviation
+  const volatility: any = std(alignedStockReturns);
+  const vol_factor_exposure = 1 / volatility;
+  const avg_vol_factor_return = 1 / std(alignedMarketReturns as any);
+  const contribution_volatility = vol_factor_exposure * avg_vol_factor_return;
+
+  // FUNDAMENTALS
+  const summary = await yahooFinance.quoteSummary(ticker, {
+    modules: [
+      'defaultKeyStatistics',
+      'financialData',
+      'summaryDetail',
+      'price',
+    ],
+  });
+  const info = summary.defaultKeyStatistics;
+
+  if (!info) {
+    throw new Error(`No financial data found for ${ticker}`);
+  }
+
+  const pb = info.priceToBook || 10;
+  const roe = summary.financialData?.returnOnEquity || 0.2;
+  // Try to get marketCap from summaryDetail, then price, fallback to 1e12
+  const marketCap =
+    summary.summaryDetail?.marketCap || summary.price?.marketCap || 1e12;
+
+  const value_exposure = 1 / pb;
+  const quality_exposure = roe;
+  const size_exposure = -Math.log(Number(marketCap) / 1e11);
+
+  const contribution_value = value_exposure * 0.01;
+  const contribution_quality = quality_exposure * 0.01;
+  const contribution_size = size_exposure * 0.01;
+  const contribution_momentum = momentum * 0.01;
+
+  type FactorKey =
+    | 'Market'
+    | 'Size'
+    | 'Value'
+    | 'Momentum'
+    | 'Quality'
+    | 'Volatility';
+
+  const contributions: Record<FactorKey, number> = {
+    Market: contribution_market,
+    Size: contribution_size,
+    Value: contribution_value,
+    Momentum: contribution_momentum,
+    Quality: contribution_quality,
+    Volatility: contribution_volatility,
+  };
+
+  const exposures: Record<FactorKey, number> = {
+    Market: beta_market,
+    Size: size_exposure,
+    Value: value_exposure,
+    Momentum: momentum,
+    Quality: quality_exposure,
+    Volatility: vol_factor_exposure,
+  };
+
+  const total = Object.values(contributions).reduce(
+    (sum, val) => sum + Math.abs(val),
+    0,
+  );
+  const contribution_percent: Record<FactorKey, number> = Object.fromEntries(
+    Object.entries(contributions).map(([k, v]) => [
+      k,
+      (100 * Math.abs(v)) / total,
+    ]),
+  ) as Record<FactorKey, number>;
+
+  // Display results
+  console.table(
+    (Object.keys(exposures) as FactorKey[]).map((key) => ({
+      Factor: key,
+      Exposure: exposures[key], //?.toFixed(4),
+      'Contribution (%)': contribution_percent[key], //?.toFixed(2),
+    })),
+  );
+
+  // Return an object with the analysis results
+  return {
+    exposures,
+    contributions,
+    contribution_percent,
+    summary,
+  };
+}
