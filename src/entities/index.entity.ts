@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  BeforeInsert,
 } from 'typeorm';
 import { Stock } from './stock.entity';
 
@@ -26,9 +27,16 @@ export class Index {
   @OneToMany(() => Stock, (stock) => stock.index)
   stocks: Stock[];
 
-  @CreateDateColumn({ default: () => Date.now() })
+  @Column({ nullable: true })
   created: number;
 
-  @UpdateDateColumn({ default: () => Date.now() })
-  updated: number;
+  @Column({ nullable: true })
+  createdAt: string;
+
+  @BeforeInsert()
+  setCreatedAt() {
+    if (this.created && !this.createdAt) {
+      this.createdAt = new Date(this.created).toISOString();
+    }
+  }
 }

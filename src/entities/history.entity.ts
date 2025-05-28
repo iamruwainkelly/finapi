@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  BeforeInsert,
 } from 'typeorm';
 
 @Entity('history')
@@ -38,9 +39,17 @@ export class History {
   @Column({ type: 'float', nullable: true })
   adjClose: number | undefined;
 
-  @CreateDateColumn({ default: () => new Date().getTime() })
+  @Column({ nullable: true })
   created: number;
 
-  @UpdateDateColumn({ default: () => new Date().getTime() })
-  updated: number;
+  // store the string date in ISO format
+  @Column({ nullable: true })
+  createdAt: string;
+
+  @BeforeInsert()
+  setCreatedAt() {
+    if (this.created && !this.createdAt) {
+      this.createdAt = new Date(this.created).toISOString();
+    }
+  }
 }

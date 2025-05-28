@@ -1,0 +1,14 @@
+[
+  {
+    "key": "TASK",
+    "value": "CRON_INDEX_QUOTE"
+  },
+  {
+    "key": "CRON_INDEX_QUOTE_ENABLED",
+    "value": "1"
+  },
+  {
+    "key": "CRON_INDEX_QUOTE_INTERVAL",
+    "value": "1"
+  }
+]
