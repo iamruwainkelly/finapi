@@ -501,3 +501,14 @@ async function getStocksFromWikipedia(
     return [];
   }
 }
+
+/*
+
+ Todo:
+ - update the updated/created date of the stocks when fetching them
+ - if the interval or enabled properties of the cron are changed, kill the existing interval and create a new one
+ - getDashboard (Finish this)
+ - getForecast (Finish this)
+ - Update website to use the new API endpoints
+
+*/
