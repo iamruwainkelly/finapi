@@ -1,34 +1,32 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
-import { AppService } from './app.service';
-import yahooFinance from 'yahoo-finance2';
-import { chromium, LaunchOptions } from 'playwright';
-import * as cheerio from 'cheerio';
-import * as fs from 'node:fs';
-import { ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { CacheInterceptor, CacheModule, CacheTTL } from '@nestjs/cache-manager';
-import * as ss from 'simple-statistics';
-import { mean, re, std } from 'mathjs';
+import { Controller, Get, Param, UseInterceptors } from "@nestjs/common";
+import { AppService } from "./app.service";
+import yahooFinance from "yahoo-finance2";
+import { chromium, LaunchOptions } from "playwright";
+import * as cheerio from "cheerio";
+import * as fs from "node:fs";
+import { ApiExcludeEndpoint } from "@nestjs/swagger";
+import { CacheInterceptor, CacheTTL } from "@nestjs/cache-manager";
+import * as ss from "simple-statistics";
+import { mean, std } from "mathjs";
 
 // entities
-import { Quote } from './entities/quote.entity';
+import { Quote } from "./entities/quote.entity";
 // history
-import { History } from './entities/history.entity';
+import { History } from "./entities/history.entity";
 // indexes
-import { Index } from './entities/index.entity';
-import { LogEntry } from './entities/logentry.entity';
+import { Index } from "./entities/index.entity";
+import { LogEntry } from "./entities/logentry.entity";
 
-import { DataSource } from 'typeorm';
-import { PerformanceDays } from './typings/PerformanceDats';
-import { IndexPerformance } from './typings/IndexPerformance';
-import { IndexQuote } from './typings/IndexQuote';
+import { DataSource } from "typeorm";
+import { PerformanceDays } from "./typings/PerformanceDats";
+import { IndexPerformance } from "./typings/IndexPerformance";
+import { IndexQuote } from "./typings/IndexQuote";
 
 // prediction
-// @ts-ignore
-import * as prediction from './helpers/prediction.js';
-import { YahooHistoric } from './typings/YahooHistoric';
-import { MarketMover } from './entities/marketMover.entity';
-import { GainersAndLosers } from './typings/MarketMover';
-import { News } from './entities/news.entity';
+import * as prediction from "./helpers/prediction.js";
+import { YahooHistoric } from "./typings/YahooHistoric";
+import { MarketMover } from "./entities/marketMover.entity";
+import { News } from "./entities/news.entity";
 
 // prediction.predict = prediction.predict.bind(prediction);
 
@@ -69,7 +67,7 @@ const calculateHistoricChangeByDate = (
       close: result.close,
       volume: result.volume,
       dateTicks: new Date(result.date).getTime() / 1000,
-      dateString: new Date(result.date).toISOString().split('T')[0],
+      dateString: new Date(result.date).toISOString().split("T")[0],
     };
   });
 
@@ -80,7 +78,7 @@ const calculateHistoricChangeByDate = (
 
   // find an entry in newResults, where the datestring is equal to dtString
   let lookupEntry = historic.find(
-    (result) => result.dateString === date.toISOString().split('T')[0],
+    (result) => result.dateString === date.toISOString().split("T")[0],
   );
 
   // console.log('date-lookup1.1', lookupEntry);
@@ -111,24 +109,24 @@ const calculateHistoricChangeByDate = (
 
 const indexes = [
   {
-    yahooFinanceSymbol: '^GSPC',
-    investingSymbol: 'SPX',
-    investingUrlName: 'us-spx-500',
+    yahooFinanceSymbol: "^GSPC",
+    investingSymbol: "SPX",
+    investingUrlName: "us-spx-500",
   },
   {
-    yahooFinanceSymbol: '^IXIC',
-    investingSymbol: 'IXIC',
-    investingUrlName: 'nasdaq-composite',
+    yahooFinanceSymbol: "^IXIC",
+    investingSymbol: "IXIC",
+    investingUrlName: "nasdaq-composite",
   },
   {
-    yahooFinanceSymbol: '^STOXX50E',
-    investingSymbol: 'STOXX50E',
-    investingUrlName: 'eu-stoxx50',
+    yahooFinanceSymbol: "^STOXX50E",
+    investingSymbol: "STOXX50E",
+    investingUrlName: "eu-stoxx50",
   },
   {
-    yahooFinanceSymbol: '^SSMI',
-    investingSymbol: 'SMI',
-    investingUrlName: 'switzerland-20',
+    yahooFinanceSymbol: "^SSMI",
+    investingSymbol: "SMI",
+    investingUrlName: "switzerland-20",
   },
 ];
 
@@ -138,20 +136,20 @@ const options: LaunchOptions = {
   slowMo: 100,
   // set some args to make playwright behave more like a real browser
   args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process',
-    '--allow-insecure-localhost',
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-web-security",
+    "--disable-features=IsolateOrigins,site-per-process",
+    "--allow-insecure-localhost",
   ],
-  ignoreDefaultArgs: ['--enable-automation'],
+  ignoreDefaultArgs: ["--enable-automation"],
 };
 
 // create an array of user agents
 const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
 ];
 
 const contextOptions = {
@@ -160,7 +158,7 @@ const contextOptions = {
   deviceScaleFactor: 1,
 };
 
-@Controller('api/')
+@Controller("api/")
 export class AppController {
   constructor(
     private readonly appService: AppService,
@@ -170,7 +168,7 @@ export class AppController {
   @UseInterceptors(CacheInterceptor)
   // cache for 1 day
   @CacheTTL(60 * 60 * 24)
-  @Get('getPrediction/:symbol')
+  @Get("getPrediction/:symbol")
   async getPrediction(@Param() params: any): Promise<object> {
     const p = await prediction.predict(params.symbol);
     return {
@@ -180,7 +178,7 @@ export class AppController {
   }
 
   @UseInterceptors(CacheInterceptor)
-  @Get('quote/:symbol')
+  @Get("quote/:symbol")
   async quote(@Param() params: any): Promise<object> {
     // get single record from the database, where symbol is ^GSPC
     const quote = await this.dataSource
@@ -212,7 +210,7 @@ export class AppController {
     return quote.json;
   }
 
-  @Get('gainers/:symbol')
+  @Get("gainers/:symbol")
   async gainers(@Param() params: any): Promise<object> {
     // console.log('symbol', params.symbol);
 
@@ -223,7 +221,7 @@ export class AppController {
     return results;
   }
 
-  @Get('quotes-multi')
+  @Get("quotes-multi")
   async quotesMulti(): Promise<object> {
     const indexSymbols = indexes.map((index) => index.yahooFinanceSymbol);
 
@@ -248,9 +246,9 @@ export class AppController {
     // get history from the database, where symbol is the same as params.symbol
     const history = await this.dataSource
       .getRepository(History)
-      .createQueryBuilder('history')
-      .where('history.symbol = :symbol', { symbol: symbol })
-      .orderBy('history.date', 'ASC')
+      .createQueryBuilder("history")
+      .where("history.symbol = :symbol", { symbol: symbol })
+      .orderBy("history.date", "ASC")
       .getMany();
 
     // Sort history by date in ascending order
@@ -271,14 +269,14 @@ export class AppController {
     };
   }
 
-  @Get('performance/:symbol')
+  @Get("performance/:symbol")
   async performance(@Param() params: any): Promise<IndexPerformance> {
     // get the history from the database, where symbol is the same as params.symbol
     const history = await this.dataSource
       .getRepository(History)
-      .createQueryBuilder('history')
-      .where('history.symbol = :symbol', { symbol: params.symbol })
-      .orderBy('history.date', 'ASC')
+      .createQueryBuilder("history")
+      .where("history.symbol = :symbol", { symbol: params.symbol })
+      .orderBy("history.date", "ASC")
       .getMany();
 
     // Sort history by date in ascending order
@@ -324,9 +322,9 @@ export class AppController {
   }
 
   // quoteSummary
-  @Get('quote-summary/:symbol')
+  @Get("quote-summary/:symbol")
   async quoteSummary(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+    console.log("symbol", params.symbol);
 
     // const results = await yahooFinance.quoteSummary(params.symbol, {
     //   modules: ['financialData', 'summaryDetail'],
@@ -339,14 +337,14 @@ export class AppController {
   }
 
   @UseInterceptors(CacheInterceptor)
-  @Get('news/:symbol')
-  async news(@Param('symbol') symbol: string): Promise<object> {
+  @Get("news/:symbol")
+  async news(@Param("symbol") symbol: string): Promise<object> {
     // get news from the database, where symbol is the same as params.symbol
     // get one record from the database, where symbol is the same as params.symbol
     const news = await this.dataSource
       .getRepository(News)
-      .createQueryBuilder('news')
-      .where('news.symbol = :symbol', { symbol: symbol })
+      .createQueryBuilder("news")
+      .where("news.symbol = :symbol", { symbol: symbol })
       .getOne();
 
     // if the news exists, return it
@@ -362,69 +360,13 @@ export class AppController {
     };
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @Get('dashboard/:symbol')
-  async dashboardSymbol(@Param() params: any): Promise<object> {
-    const quote = await this.quote(params);
-    const historical = await this.performance(params);
-    const search = {};
-    const marketMovers = await this.marketMovers(params);
-
-    return {
-      quote: quote,
-      historical: historical,
-      search: search,
-      marketMovers: marketMovers,
-    };
-  }
-
-  @UseInterceptors(CacheInterceptor)
-  @Get('dashboard')
-  async dashboard(): Promise<Array<object>> {
-    // get the indexes from the indexes array
-    const indexSymbols = indexes.map((index) => index.yahooFinanceSymbol);
-
-    // run all 4 functions in parallel
-    const promises = indexSymbols.map(async (symbol) => {
-      // log current time
-      console.log('quote - before', new Date());
-      const quote = await this.quote({ symbol });
-      console.log('quote - after', new Date());
-
-      console.log('historical - before', new Date());
-      const historical = await this.getIndexPerformance(symbol);
-      console.log('historical - after', new Date());
-
-      console.log('search - before', new Date());
-      const search = {};
-      console.log('search - after', new Date());
-
-      console.log('marketMovers - before', new Date());
-      const marketMovers = await this.marketMovers(symbol);
-      console.log('marketMovers - after', new Date());
-
-      return {
-        symbol: symbol,
-        quote: quote,
-        historical: historical,
-        search: search,
-        marketMovers: marketMovers,
-      };
-    });
-
-    // wait for all promises to resolve
-    const results = await Promise.all(promises);
-
-    return results;
-  }
-
-  @Get('market-movers-1/:index')
+  @Get("market-movers-1/:index")
   async marketwatch(@Param() params: any): Promise<object> {
     // throw an error if they did not prefix the index with ^
-    if (!params.index.startsWith('^')) {
+    if (!params.index.startsWith("^")) {
       return {
         error:
-          'Index should be prefixed with ^. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index should be prefixed with ^. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -436,7 +378,7 @@ export class AppController {
     if (!index) {
       return {
         error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -447,7 +389,7 @@ export class AppController {
     const context = await browser.newContext(contextOptions);
 
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     const content = await page.content();
     await browser.close();
 
@@ -457,13 +399,13 @@ export class AppController {
     const gainersTable = $('[data-test="gainers-table"] tbody tr');
     const gainers = gainersTable
       .map((_, row) => {
-        const cells = $(row).find('td');
+        const cells = $(row).find("td");
         return {
           name: $(cells[0])
             .find('[data-test="gainers-losers-label"]')
             .text()
             .trim(),
-          symbol: $(cells[0]).find('span.font-semibold').text().trim(),
+          symbol: $(cells[0]).find("span.font-semibold").text().trim(),
           price: $(cells[1])
             .find('[data-test="gainers-losers-last"]')
             .text()
@@ -484,13 +426,13 @@ export class AppController {
     const losersTable = $('[data-test="losers-table"] tbody tr');
     const losers = losersTable
       .map((_, row) => {
-        const cells = $(row).find('td');
+        const cells = $(row).find("td");
         return {
           name: $(cells[0])
             .find('[data-test="gainers-losers-label"]')
             .text()
             .trim(),
-          symbol: $(cells[0]).find('span.font-semibold').text().trim(),
+          symbol: $(cells[0]).find("span.font-semibold").text().trim(),
           price: $(cells[1])
             .find('[data-test="gainers-losers-last"]')
             .text()
@@ -512,10 +454,10 @@ export class AppController {
 
   @UseInterceptors(CacheInterceptor)
   @ApiExcludeEndpoint()
-  @Get('market-movers/:indexSymbol')
+  @Get("market-movers/:indexSymbol")
   // @Param('symbol') symbol: string,
   async marketMovers(
-    @Param('indexSymbol') indexSymbol: string,
+    @Param("indexSymbol") indexSymbol: string,
   ): Promise<object> {
     // get the index from the indexes array
     const indexEntry = indexes.find(
@@ -526,7 +468,7 @@ export class AppController {
     if (!indexEntry) {
       return {
         error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -534,8 +476,8 @@ export class AppController {
     // return the json from the database if it exists
     const marketMovers = await this.dataSource
       .getRepository(MarketMover)
-      .createQueryBuilder('marketMover')
-      .where('marketMover.symbol = :symbol', {
+      .createQueryBuilder("marketMover")
+      .where("marketMover.symbol = :symbol", {
         symbol: indexEntry.yahooFinanceSymbol,
       })
       .getOne();
@@ -554,58 +496,26 @@ export class AppController {
 
     // return the json as GainersAndLosers object
     return {
-      gainers: marketMoversJson.gainers.map((gainer: any) => ({
-        mobx_easy_id: gainer.mobx_easy_id,
-        month: gainer.month,
-        instrumentId: gainer.instrumentId,
-        flag: gainer.flag,
-        name: gainer.name,
-        precision: gainer.precision,
-        symbol: gainer.symbol,
-        exchange: gainer.exchange,
-        volume: gainer.volume,
-        last: gainer.last,
-        change: gainer.change,
-        changePercent: gainer.changePercent,
-        changeDirection: gainer.changeDirection,
-        avgVolume: gainer.avgVolume,
-        _liveVolume: gainer._liveVolume,
-      })),
-      losers: marketMoversJson.losers.map((loser: any) => ({
-        mobx_easy_id: loser.mobx_easy_id,
-        month: loser.month,
-        instrumentId: loser.instrumentId,
-        flag: loser.flag,
-        name: loser.name,
-        precision: loser.precision,
-        symbol: loser.symbol,
-        exchange: loser.exchange,
-        volume: loser.volume,
-        last: loser.last,
-        change: loser.change,
-        changePercent: loser.changePercent,
-        changeDirection: loser.changeDirection,
-        avgVolume: loser.avgVolume,
-        _liveVolume: loser._liveVolume,
-      })),
+      gainers: marketMoversJson.gainers,
+      losers: marketMoversJson.losers,
     };
   }
 
-  // route for scra[ping a url
+  // route for scraping a url
   @ApiExcludeEndpoint()
-  @Get('scrape')
+  @Get("scrape")
   async scrape(): Promise<object> {
     const url =
-      'https://superbalist.com/browse/men/shoes/sneakers?max_price=2000&page=3';
+      "https://superbalist.com/browse/men/shoes/sneakers?max_price=2000&page=3";
     const browser = await chromium.launch(options);
     const context = await browser.newContext(contextOptions);
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     const content = await page.content();
     await browser.close();
 
     // save the content to a file
-    fs.writeFileSync('sneakers.html', content);
+    fs.writeFileSync("sneakers.html", content);
 
     return { content };
   }
@@ -613,27 +523,27 @@ export class AppController {
   // route for scra[ping a url
   @UseInterceptors(CacheInterceptor)
   @ApiExcludeEndpoint()
-  @Get('test')
+  @Get("test")
   async test(): Promise<object> {
     // simulate waiting for 5 seconds
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    return { hello: 'world' };
+    return { hello: "world" };
   }
 
   // **************************************************************
   // Index related endpoints
   // **************************************************************
 
-  @Get('getIndexQuote/:symbol')
+  @Get("getIndexQuote/:symbol")
   async getIndexQuote(
-    @Param('symbol') symbol: string,
+    @Param("symbol") symbol: string,
   ): Promise<IndexQuote | { error: string }> {
     // get the quote for the symbol from the database
     const quote = await this.dataSource
       .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .where('quote.symbol = :symbol', { symbol: symbol })
+      .createQueryBuilder("quote")
+      .where("quote.symbol = :symbol", { symbol: symbol })
       .getOne();
 
     // if the quote does not exist, return an error
@@ -651,12 +561,12 @@ export class AppController {
   }
 
   // getIndexHistorical
-  @Get('getIndexPerformances')
+  @Get("getIndexPerformances")
   async getIndexPerformances(): Promise<IndexPerformance[]> {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // for each index, get the history from this.performance
@@ -677,7 +587,7 @@ export class AppController {
   }
 
   // getIndexPerformance
-  @Get('getIndexPerformance/:symbol')
+  @Get("getIndexPerformance/:symbol")
   async getIndexPerformance(
     @Param() symbol: string,
   ): Promise<IndexPerformance | { error: string }> {
@@ -699,13 +609,12 @@ export class AppController {
     return performance;
   }
 
-  // getDashboard
-  @Get('getDashboard')
-  async getDashboard(): Promise<object> {
+  @Get("dashboard")
+  async dashboard(): Promise<object> {
     // get indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // for each index, get the quote, history, search and market movers
@@ -740,10 +649,10 @@ export class AppController {
   }
 
   @UseInterceptors(CacheInterceptor)
-  @Get('getSymbolAnalysis/:index/:symbol')
+  @Get("getSymbolAnalysis/:index/:symbol")
   async getSymbolAnalysisByIndex(
-    @Param('index') index: string,
-    @Param('symbol') symbol: string,
+    @Param("index") index: string,
+    @Param("symbol") symbol: string,
   ): Promise<object | { error: string }> {
     // ensure the index is in the indexes array
     const indexObj = indexes.find(
@@ -751,7 +660,7 @@ export class AppController {
     );
 
     if (!indexObj) {
-      return { error: 'Index not found.' };
+      return { error: "Index not found." };
     }
 
     // analyze the stock
@@ -763,15 +672,15 @@ export class AppController {
     }
   }
 
-  @Get('logs')
+  @Get("logs")
   async getLogs(): Promise<object[]> {
     const logs = await this.dataSource
       .getRepository(LogEntry)
-      .createQueryBuilder('log')
-      .orderBy('log.id', 'DESC')
+      .createQueryBuilder("log")
+      .orderBy("log.id", "DESC")
       .getMany();
     return logs.map((log) => {
-      let createdISO: string = '';
+      let createdISO: string = "";
       // convert getTime() to ISO string
       if (log.created) {
         createdISO = new Date(log.created).toISOString();
@@ -850,7 +759,7 @@ async function fetchHistoricalData(symbol: string) {
   const result = await yahooFinance.historical(symbol, {
     period1: startDate,
     period2: today,
-    interval: '1d',
+    interval: "1d",
   });
   return result
     .map((entry) => ({
@@ -873,7 +782,7 @@ function getMomentumExposure(ticker: string, historical: any[]) {
   // });
 
   if (historical.length < 252 + 21) {
-    throw new Error('Not enough data to calculate momentum exposure.');
+    throw new Error("Not enough data to calculate momentum exposure.");
   }
 
   historical.sort(
@@ -906,12 +815,11 @@ async function analyzeStock(marketIndex: string, ticker: string) {
   const alignedMarketReturns = marketReturns.slice(0, minLength);
 
   // MARKET: beta via linear regression
-  const beta_market =
-    ss.linearRegressionLine(
-      ss.linearRegression(
-        alignedMarketReturns.map((x, i) => [x, alignedStockReturns[i]]),
-      ),
-    )(1) - ss.linearRegressionLine(ss.linearRegression([[0, 0]]))(1); // Slope only
+  const beta_market = ss.linearRegressionLine(
+    ss.linearRegression(
+      alignedMarketReturns.map((x, i) => [x, alignedStockReturns[i]]),
+    ),
+  )(1) - ss.linearRegressionLine(ss.linearRegression([[0, 0]]))(1); // Slope only
 
   const avg_market_return = mean(alignedMarketReturns);
   const contribution_market = beta_market * avg_market_return;
@@ -954,10 +862,10 @@ async function analyzeStock(marketIndex: string, ticker: string) {
   // FUNDAMENTALS
   const summary = await yahooFinance.quoteSummary(ticker, {
     modules: [
-      'defaultKeyStatistics',
-      'financialData',
-      'summaryDetail',
-      'price',
+      "defaultKeyStatistics",
+      "financialData",
+      "summaryDetail",
+      "price",
     ],
   });
   const info = summary.defaultKeyStatistics;
@@ -969,8 +877,8 @@ async function analyzeStock(marketIndex: string, ticker: string) {
   const pb = info.priceToBook || 10;
   const roe = summary.financialData?.returnOnEquity || 0.2;
   // Try to get marketCap from summaryDetail, then price, fallback to 1e12
-  const marketCap =
-    summary.summaryDetail?.marketCap || summary.price?.marketCap || 1e12;
+  const marketCap = summary.summaryDetail?.marketCap ||
+    summary.price?.marketCap || 1e12;
 
   const value_exposure = 1 / pb;
   const quality_exposure = roe;
@@ -982,12 +890,12 @@ async function analyzeStock(marketIndex: string, ticker: string) {
   const contribution_momentum = momentum * 0.01;
 
   type FactorKey =
-    | 'Market'
-    | 'Size'
-    | 'Value'
-    | 'Momentum'
-    | 'Quality'
-    | 'Volatility';
+    | "Market"
+    | "Size"
+    | "Value"
+    | "Momentum"
+    | "Quality"
+    | "Volatility";
 
   const contributions: Record<FactorKey, number> = {
     Market: contribution_market,
@@ -1023,7 +931,7 @@ async function analyzeStock(marketIndex: string, ticker: string) {
     (Object.keys(exposures) as FactorKey[]).map((key) => ({
       Factor: key,
       Exposure: exposures[key], //?.toFixed(4),
-      'Contribution (%)': contribution_percent[key], //?.toFixed(2),
+      "Contribution (%)": contribution_percent[key], //?.toFixed(2),
     })),
   );
 
