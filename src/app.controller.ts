@@ -15,6 +15,7 @@ import { Quote } from './entities/quote.entity';
 import { History } from './entities/history.entity';
 // indexes
 import { Index } from './entities/index.entity';
+import { LogEntry } from './entities/logentry.entity';
 
 import { DataSource } from 'typeorm';
 import { PerformanceDays } from './typings/PerformanceDats';
@@ -25,6 +26,9 @@ import { IndexQuote } from './typings/IndexQuote';
 // @ts-ignore
 import * as prediction from './helpers/prediction.js';
 import { YahooHistoric } from './typings/YahooHistoric';
+import { MarketMover } from './entities/marketMover.entity';
+import { GainersAndLosers } from './typings/MarketMover';
+import { News } from './entities/news.entity';
 
 // prediction.predict = prediction.predict.bind(prediction);
 
@@ -335,13 +339,27 @@ export class AppController {
   }
 
   @UseInterceptors(CacheInterceptor)
-  @Get('search/:symbol')
-  async search(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
+  @Get('news/:symbol')
+  async news(@Param('symbol') symbol: string): Promise<object> {
+    // get news from the database, where symbol is the same as params.symbol
+    // get one record from the database, where symbol is the same as params.symbol
+    const news = await this.dataSource
+      .getRepository(News)
+      .createQueryBuilder('news')
+      .where('news.symbol = :symbol', { symbol: symbol })
+      .getOne();
 
-    const results = await yahooFinance.search(params.symbol);
+    // if the news exists, return it
+    if (news) {
+      return {
+        news: JSON.parse(news.json),
+      };
+    }
 
-    return results;
+    // if the news does not exist, return empty news object
+    return {
+      news: {},
+    };
   }
 
   @UseInterceptors(CacheInterceptor)
@@ -349,7 +367,7 @@ export class AppController {
   async dashboardSymbol(@Param() params: any): Promise<object> {
     const quote = await this.quote(params);
     const historical = await this.performance(params);
-    const search = await this.search(params);
+    const search = {};
     const marketMovers = await this.marketMovers(params);
 
     return {
@@ -378,11 +396,11 @@ export class AppController {
       console.log('historical - after', new Date());
 
       console.log('search - before', new Date());
-      const search = await this.search({ symbol });
+      const search = {};
       console.log('search - after', new Date());
 
       console.log('marketMovers - before', new Date());
-      const marketMovers = await this.marketMovers({ symbol });
+      const marketMovers = await this.marketMovers(symbol);
       console.log('marketMovers - after', new Date());
 
       return {
@@ -494,75 +512,83 @@ export class AppController {
 
   @UseInterceptors(CacheInterceptor)
   @ApiExcludeEndpoint()
-  @Get('market-movers/:index')
-  async marketMovers(@Param() params: any): Promise<object> {
+  @Get('market-movers/:indexSymbol')
+  // @Param('symbol') symbol: string,
+  async marketMovers(
+    @Param('indexSymbol') indexSymbol: string,
+  ): Promise<object> {
     // get the index from the indexes array
-    const index = indexes.find(
-      (index) => index.yahooFinanceSymbol === params.symbol.toUpperCase(),
+    const indexEntry = indexes.find(
+      (index) => index.yahooFinanceSymbol === indexSymbol.toUpperCase(),
     );
 
     // if the index is not found, return an error
-    if (!index) {
+    if (!indexEntry) {
       return {
         error:
           'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
       };
     }
 
-    const url = `https://za.investing.com/indices/${index.investingUrlName}`;
+    // get the index from the database
+    // return the json from the database if it exists
+    const marketMovers = await this.dataSource
+      .getRepository(MarketMover)
+      .createQueryBuilder('marketMover')
+      .where('marketMover.symbol = :symbol', {
+        symbol: indexEntry.yahooFinanceSymbol,
+      })
+      .getOne();
 
-    const browser = await chromium.launch(options);
-    const context = await browser.newContext(contextOptions);
-    const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    const content = await page.content();
-    await browser.close();
-
-    // load the content into cheerio
-    const $ = cheerio.load(content);
-
-    // extract json from script id="__NEXT_DATA__" tag
-    const json = $('#__NEXT_DATA__').text();
-
-    // parse the json and get the data from the props object
-    const data = JSON.parse(json);
-
-    // Access specific data, for example, pageProps
-    const pageProps = data.props.pageProps.state.quotesStore.quotes;
-
-    let losers = [];
-    let gainers = [];
-
-    // loop through array
-    for (let i = 0; i < pageProps.length; i++) {
-      const prop = pageProps[i];
-
-      // each prop is an array
-      for (let j = 0; j < prop.length; j++) {
-        const item = prop[j];
-
-        switch (typeof item) {
-          case 'string':
-            //console.log('String:', item); // log the string
-
-            // if item string ends with 'stocks.gainersLosers'
-            if (item.endsWith('stocks.gainersLosers')) {
-              // check that item starts with 'indexLosers'
-              if (item.startsWith('indexLosers')) {
-                // get the next item in the array
-                losers = prop[1]._collection;
-              } else if (item.startsWith('indexGainers')) {
-                // get the next item in the array
-                gainers = prop[1]._collection;
-              }
-            }
-
-            break;
-        }
-      }
+    // return the json from the database
+    // if the marketMovers is not found, return empty 'GainersAndLosers' object
+    if (!marketMovers) {
+      return {
+        gainers: [],
+        losers: [],
+      };
     }
 
-    return { gainers, losers };
+    // if the marketMovers is found, return the json
+    const marketMoversJson = JSON.parse(marketMovers.json);
+
+    // return the json as GainersAndLosers object
+    return {
+      gainers: marketMoversJson.gainers.map((gainer: any) => ({
+        mobx_easy_id: gainer.mobx_easy_id,
+        month: gainer.month,
+        instrumentId: gainer.instrumentId,
+        flag: gainer.flag,
+        name: gainer.name,
+        precision: gainer.precision,
+        symbol: gainer.symbol,
+        exchange: gainer.exchange,
+        volume: gainer.volume,
+        last: gainer.last,
+        change: gainer.change,
+        changePercent: gainer.changePercent,
+        changeDirection: gainer.changeDirection,
+        avgVolume: gainer.avgVolume,
+        _liveVolume: gainer._liveVolume,
+      })),
+      losers: marketMoversJson.losers.map((loser: any) => ({
+        mobx_easy_id: loser.mobx_easy_id,
+        month: loser.month,
+        instrumentId: loser.instrumentId,
+        flag: loser.flag,
+        name: loser.name,
+        precision: loser.precision,
+        symbol: loser.symbol,
+        exchange: loser.exchange,
+        volume: loser.volume,
+        last: loser.last,
+        change: loser.change,
+        changePercent: loser.changePercent,
+        changeDirection: loser.changeDirection,
+        avgVolume: loser.avgVolume,
+        _liveVolume: loser._liveVolume,
+      })),
+    };
   }
 
   // route for scra[ping a url
@@ -690,19 +716,19 @@ export class AppController {
       // get the history for the index
       const performance = await this.getIndexPerformance(index.symbol);
 
-      // get the search results for the index
-      //const search = await this.search({ symbol: index.symbol });
+      //get the news results for the index
+      const news = await this.news(index.symbol);
 
       // get the market movers for the index
-      //const marketMovers = await this.marketMovers({ symbol: index.symbol });
+      const marketMovers = await this.marketMovers(index.symbol);
 
       // return the dashboard object for the index
       return {
         symbol: index.symbol,
         quote: quote,
         performance: performance,
-        //search: search,
-        //marketMovers: marketMovers,
+        news: news,
+        marketMovers: marketMovers,
       };
     });
 
@@ -735,6 +761,29 @@ export class AppController {
     } catch (error) {
       return { error: error.message };
     }
+  }
+
+  @Get('logs')
+  async getLogs(): Promise<object[]> {
+    const logs = await this.dataSource
+      .getRepository(LogEntry)
+      .createQueryBuilder('log')
+      .orderBy('log.id', 'DESC')
+      .getMany();
+    return logs.map((log) => {
+      let createdISO: string = '';
+      // convert getTime() to ISO string
+      if (log.created) {
+        createdISO = new Date(log.created).toISOString();
+      }
+      return {
+        id: log.id,
+        level: log.level,
+        message: log.message,
+        context: log.context,
+        created: createdISO,
+      };
+    });
   }
 }
 
@@ -789,6 +838,8 @@ function getReturns(prices: any[]): number[] {
   }
   return returns;
 }
+
+// TODO: fettch history from database
 
 const today = new Date();
 const startDate = new Date();

@@ -5,5 +5,33 @@
     "description": "Fetches index quotes at regular intervals",
     "interval": 1,
     "enabled": true
+  },
+  {
+    "name": "INDEX_HISTORY_INTERVAL",
+    "method": "getIndexHistory",
+    "description": "Fetches stock history at regular intervals",
+    "interval": 60,
+    "enabled": false
+  },
+  {
+    "name": "INDEX_MARKETMOVERS_INTERVAL",
+    "method": "getIndexMarketMovers",
+    "description": "Fetches market movers at regular intervals",
+    "interval": 360,
+    "enabled": true
+  },
+  {
+    "name": "INDEX_NEWS_INTERVAL",
+    "method": "getIndexNews",
+    "description": "Fetches news related to the index at regular intervals",
+    "interval": 240,
+    "enabled": true
+  },
+  {
+    "name": "INDEX_CLEANUPLOG_INTERVAL",
+    "method": "cleanupLogEntries",
+    "description": "Periodically cleans up log entries to maintain performance",
+    "interval": 60,
+    "enabled": true
   }
 ]

@@ -1,3 +1,10 @@
+// create entity with the following fields:
+// - id: number
+// - symbol: string
+// - json: string
+// - created: number
+// - createdAt: string
+
 import {
   Entity,
   Column,
@@ -5,34 +12,24 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   BeforeInsert,
-  BeforeUpdate,
 } from 'typeorm';
 
 @Entity()
-export class Quote {
+export class MarketMover {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column({ nullable: true })
   symbol: string;
 
-  // store json
-  @Column({ type: 'json', nullable: true })
-  json: any;
+  @Column('json', { nullable: true })
+  json: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'bigint', nullable: true })
   created: number;
 
-  // store the string date in ISO format
   @Column({ nullable: true })
   createdAt: string;
-
-  // upatedAt is automatically managed by TypeORM
-  @Column({ nullable: true })
-  updated: number;
-
-  @Column({ nullable: true })
-  updatedAt: string;
 
   @BeforeInsert()
   setCreatedAt() {

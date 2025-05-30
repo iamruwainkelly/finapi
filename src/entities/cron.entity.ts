@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
 
 @Entity('cron')
@@ -25,6 +26,9 @@ export class Cron {
   @Column({ nullable: true })
   lastRun: number;
 
+  @Column({ nullable: true })
+  lastRunAt: string;
+
   // interval in minutes
   @Column({ nullable: true })
   interval: number;
@@ -32,4 +36,12 @@ export class Cron {
   // enabled status
   @Column({ default: true })
   enabled: boolean;
+
+  // before update hook to set lastRunAt
+  @BeforeUpdate()
+  setLastRunAt() {
+    if (this.lastRun && !this.lastRunAt) {
+      this.lastRunAt = new Date(this.lastRun).toISOString();
+    }
+  }
 }

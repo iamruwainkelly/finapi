@@ -1,38 +1,29 @@
+// news entity
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
   BeforeInsert,
-  BeforeUpdate,
 } from 'typeorm';
 
 @Entity()
-export class Quote {
+export class News {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column()
   symbol: string;
 
-  // store json
-  @Column({ type: 'json', nullable: true })
-  json: any;
-
   @Column({ nullable: true })
+  json: string;
+
+  // created is a timestamp in seconds
+  @Column()
   created: number;
 
-  // store the string date in ISO format
-  @Column({ nullable: true })
+  @Column()
   createdAt: string;
-
-  // upatedAt is automatically managed by TypeORM
-  @Column({ nullable: true })
-  updated: number;
-
-  @Column({ nullable: true })
-  updatedAt: string;
 
   @BeforeInsert()
   setCreatedAt() {
