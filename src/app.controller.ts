@@ -1,13 +1,13 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
 import { AppService } from './app.service';
 import yahooFinance from 'yahoo-finance2';
 import { chromium, LaunchOptions } from 'playwright';
 import * as cheerio from 'cheerio';
 import * as fs from 'node:fs';
-import { ApiExcludeController, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { CacheInterceptor, CacheModule, CacheTTL } from '@nestjs/cache-manager';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import * as ss from 'simple-statistics';
-import { mean, re, std } from 'mathjs';
+import { mean, std } from 'mathjs';
 
 // entities
 import { Quote } from './entities/quote.entity';
@@ -16,7 +16,6 @@ import { History } from './entities/history.entity';
 // indexes
 import { Index } from './entities/index.entity';
 import { LogEntry } from './entities/logentry.entity';
-import { Stock } from './entities/stock.entity';
 
 import { DataSource } from 'typeorm';
 import { PerformanceDays } from './typings/PerformanceDats';
@@ -24,12 +23,11 @@ import { IndexPerformance } from './typings/IndexPerformance';
 import { IndexQuote } from './typings/IndexQuote';
 
 // prediction
-// @ts-ignore
 import * as prediction from './helpers/prediction.js';
 import { YahooHistoric } from './typings/YahooHistoric';
 import { MarketMover } from './entities/marketMover.entity';
-import { GainersAndLosers } from './typings/MarketMover';
 import { News } from './entities/news.entity';
+import { Stock } from './entities/stock.entity';
 
 // prediction.predict = prediction.predict.bind(prediction);
 
@@ -363,51 +361,6 @@ export class AppController {
     };
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @Get('dashboard/:symbol')
-  async dashboardSymbol(@Param() params: any): Promise<object> {
-    const quote = await this.quote(params);
-    const historical = await this.performance(params);
-    const search = {};
-    const marketMovers = await this.marketMovers(params);
-
-    return {
-      quote: quote,
-      historical: historical,
-      search: search,
-      marketMovers: marketMovers,
-    };
-  }
-
-  @UseInterceptors(CacheInterceptor)
-  @Get('dashboard')
-  async dashboard(): Promise<Array<object>> {
-    // get the indexes from the indexes array
-    const indexSymbols = indexes.map((index) => index.yahooFinanceSymbol);
-
-    // run all 4 functions in parallel
-    const promises = indexSymbols.map(async (symbol) => {
-      // log current time
-      const quote = await this.quote({ symbol });
-      const historical = await this.getIndexPerformance(symbol);
-      // const search = {};
-      const marketMovers = await this.marketMovers(symbol);
-
-      return {
-        symbol: symbol,
-        quote: quote,
-        historical: historical,
-        search: {},
-        marketMovers: marketMovers,
-      };
-    });
-
-    // wait for all promises to resolve
-    const results = await Promise.all(promises);
-
-    return results;
-  }
-
   @Get('market-movers-1/:index')
   async marketwatch(@Param() params: any): Promise<object> {
     // throw an error if they did not prefix the index with ^
@@ -544,65 +497,12 @@ export class AppController {
 
     // return the json as GainersAndLosers object
     return {
-      gainers: marketMoversJson.gainers.map((gainer: any) => ({
-        mobx_easy_id: gainer.mobx_easy_id,
-        month: gainer.month,
-        instrumentId: gainer.instrumentId,
-        flag: gainer.flag,
-        name: gainer.name,
-        precision: gainer.precision,
-        symbol: gainer.symbol,
-        exchange: gainer.exchange,
-        volume: gainer.volume,
-        last: gainer.last,
-        change: gainer.change,
-        changePercent: gainer.changePercent,
-        changeDirection: gainer.changeDirection,
-        avgVolume: gainer.avgVolume,
-        _liveVolume: gainer._liveVolume,
-      })),
-      losers: marketMoversJson.losers.map((loser: any) => ({
-        mobx_easy_id: loser.mobx_easy_id,
-        month: loser.month,
-        instrumentId: loser.instrumentId,
-        flag: loser.flag,
-        name: loser.name,
-        precision: loser.precision,
-        symbol: loser.symbol,
-        exchange: loser.exchange,
-        volume: loser.volume,
-        last: loser.last,
-        change: loser.change,
-        changePercent: loser.changePercent,
-        changeDirection: loser.changeDirection,
-        avgVolume: loser.avgVolume,
-        _liveVolume: loser._liveVolume,
-      })),
+      gainers: marketMoversJson.gainers,
+      losers: marketMoversJson.losers,
     };
   }
 
-  @Get('stocks/:indexSymbol')
-  async getStocksByIndex(
-    @Param('indexSymbol') indexSymbol: string,
-  ): Promise<object[]> {
-    const stocks = await this.dataSource
-      .getRepository(Stock)
-      .createQueryBuilder('stock')
-      .where('stock.indexSymbol = :indexSymbol', { indexSymbol })
-      .getMany();
-    return stocks;
-  }
-
-  @Get('stocks')
-  async getStocks(): Promise<object[]> {
-    const stocks = await this.dataSource
-      .getRepository(Stock)
-      .createQueryBuilder('stock')
-      .getMany();
-    return stocks;
-  }
-
-  // route for scra[ping a url
+  // route for scraping a url
   @ApiExcludeEndpoint()
   @Get('scrape')
   async scrape(): Promise<object> {
@@ -710,9 +610,8 @@ export class AppController {
     return performance;
   }
 
-  // getDashboard
-  @Get('getDashboard')
-  async getDashboard(): Promise<object> {
+  @Get('dashboard')
+  async dashboard(): Promise<object> {
     // get indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
@@ -795,6 +694,27 @@ export class AppController {
         created: createdISO,
       };
     });
+  }
+
+  @Get('stocks/:indexSymbol')
+  async getStocksByIndex(
+    @Param('indexSymbol') indexSymbol: string,
+  ): Promise<object[]> {
+    const stocks = await this.dataSource
+      .getRepository(Stock)
+      .createQueryBuilder('stock')
+      .where('stock.indexSymbol = :indexSymbol', { indexSymbol })
+      .getMany();
+    return stocks;
+  }
+
+  @Get('stocks')
+  async getStocks(): Promise<object[]> {
+    const stocks = await this.dataSource
+      .getRepository(Stock)
+      .createQueryBuilder('stock')
+      .getMany();
+    return stocks;
   }
 }
 

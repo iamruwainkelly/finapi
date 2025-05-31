@@ -11,7 +11,7 @@
     "method": "getIndexHistory",
     "description": "Fetches stock history at regular intervals",
     "interval": 60,
-    "enabled": false
+    "enabled": true
   },
   {
     "name": "INDEX_MARKETMOVERS_INTERVAL",
