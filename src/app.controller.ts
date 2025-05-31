@@ -16,6 +16,7 @@ import { History } from './entities/history.entity';
 // indexes
 import { Index } from './entities/index.entity';
 import { LogEntry } from './entities/logentry.entity';
+import { Stock } from './entities/stock.entity';
 
 import { DataSource } from 'typeorm';
 import { PerformanceDays } from './typings/PerformanceDats';
@@ -387,27 +388,16 @@ export class AppController {
     // run all 4 functions in parallel
     const promises = indexSymbols.map(async (symbol) => {
       // log current time
-      console.log('quote - before', new Date());
       const quote = await this.quote({ symbol });
-      console.log('quote - after', new Date());
-
-      console.log('historical - before', new Date());
       const historical = await this.getIndexPerformance(symbol);
-      console.log('historical - after', new Date());
-
-      console.log('search - before', new Date());
-      const search = {};
-      console.log('search - after', new Date());
-
-      console.log('marketMovers - before', new Date());
+      // const search = {};
       const marketMovers = await this.marketMovers(symbol);
-      console.log('marketMovers - after', new Date());
 
       return {
         symbol: symbol,
         quote: quote,
         historical: historical,
-        search: search,
+        search: {},
         marketMovers: marketMovers,
       };
     });
@@ -589,6 +579,27 @@ export class AppController {
         _liveVolume: loser._liveVolume,
       })),
     };
+  }
+
+  @Get('stocks/:indexSymbol')
+  async getStocksByIndex(
+    @Param('indexSymbol') indexSymbol: string,
+  ): Promise<object[]> {
+    const stocks = await this.dataSource
+      .getRepository(Stock)
+      .createQueryBuilder('stock')
+      .where('stock.indexSymbol = :indexSymbol', { indexSymbol })
+      .getMany();
+    return stocks;
+  }
+
+  @Get('stocks')
+  async getStocks(): Promise<object[]> {
+    const stocks = await this.dataSource
+      .getRepository(Stock)
+      .createQueryBuilder('stock')
+      .getMany();
+    return stocks;
   }
 
   // route for scra[ping a url

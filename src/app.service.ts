@@ -318,6 +318,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         stockEntity.symbol = stock.symbol;
         stockEntity.name = stock.name;
         stockEntity.index = index; // Set the index relation
+        stockEntity.indexSymbol = index.symbol; // Set the index relation
         stockEntity.created = new Date().getTime();
 
         return stockEntity;
@@ -514,16 +515,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         indexes.map(async (index) => {
           let result;
           try {
-            result = await yahooFinance.quoteCombine(index.symbol, {
-              fields: [
-                'regularMarketPrice',
-                'regularMarketChangePercent',
-                'longName',
-                'regularMarketPreviousClose',
-                'quoteType',
-                'averageDailyVolume10Day',
-              ],
-            });
+            result = await yahooFinance.quoteCombine(index.symbol);
           } catch (error) {
             this.dataSource.getRepository(LogEntry).save({
               level: 'error',
@@ -1036,15 +1028,18 @@ async function getStocksFromWikipedia(
   mapping: SymbolMapping,
 ): Promise<MarketSymbol[]> {
   try {
-    this.dataSource.getRepository(LogEntry).save({
-      level: 'info',
-      message: 'Fetching data from Wikipedia: ' + url,
-      context: 'getStocksFromWikipedia',
-    });
+    // this.dataSource.getRepository(LogEntry).save({
+    //   level: 'info',
+    //   message: 'Fetching data from Wikipedia: ' + url,
+    //   context: 'getStocksFromWikipedia',
+    // });
 
     // Fetch the HTML content from the URL
     const response = await axios.get(url);
     const html = response.data;
+
+    // write the HTML to a file ~/src/data/wikipedia.html
+    fs.writeFileSync(path.join('./src', 'data', 'wikipedia.html'), html);
 
     // Load the HTML into Cheerio
     const $ = cheerio.load(html);
@@ -1084,15 +1079,16 @@ async function getStocksFromWikipedia(
               stock.name = $(cell).text().trim();
             }
           });
+          console.log(`Extracted stock: ${stock.symbol} - ${stock.name}`);
           stocks.push(stock);
         }
       });
 
-    this.dataSource.getRepository(LogEntry).save({
-      level: 'info',
-      message: `Found ${stocks.length} stocks in the table.`,
-      context: 'getStocksFromWikipedia',
-    });
+    //this.dataSource.getRepository(LogEntry).save({
+    //  level: 'info',
+    //  message: `Found ${stocks.length} stocks in the table.`,
+    //  context: 'getStocksFromWikipedia',
+    //});
 
     return stocks;
   } catch (err) {

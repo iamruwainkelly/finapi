@@ -30,6 +30,9 @@ export class Stock {
   @ManyToOne(() => Index, (index) => index.stocks)
   index: Index;
 
+  @Column()
+  indexSymbol: string;
+
   @BeforeInsert()
   setCreatedAt() {
     if (this.created && !this.createdAt) {
