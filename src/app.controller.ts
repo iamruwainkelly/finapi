@@ -28,8 +28,10 @@ import { YahooHistoric } from './typings/YahooHistoric';
 import { MarketMover } from './entities/marketMover.entity';
 import { News } from './entities/news.entity';
 import { Stock } from './entities/stock.entity';
+import { randomInt } from 'node:crypto';
 
-// prediction.predict = prediction.predict.bind(prediction);
+// import metrics.js
+// import { Metrics } from './helpers/metrics.js';
 
 interface Historic {
   adjClose?: number | undefined;
@@ -176,6 +178,560 @@ export class AppController {
       symbol: params.symbol,
       prediction: p,
     };
+  }
+
+  //@UseInterceptors(CacheInterceptor)
+  // cache for 1 day
+  //@CacheTTL(60 * 60 * 24)
+  @Get('history/daily/:symbol')
+  async historyDaily(@Param() params: any): Promise<object> {
+    // return history from yahoo finance
+    const results = await yahooFinance.historical(params.symbol, {
+      period1: '2020-01-01',
+      period2: new Date(),
+      interval: '1d',
+    });
+
+    return results;
+  }
+
+  @Get('history/monthly/:symbol')
+  async historyMonthly(@Param() params: any): Promise<object> {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    // return history from yahoo finance
+    const results = await yahooFinance.historical(params.symbol, {
+      period1: oneYearAgo,
+      period2: new Date(),
+      interval: '1mo',
+    });
+
+    return results;
+  }
+
+  @Get('moreCash/:index/:stock')
+  async moreCash(
+    @Param('index') index: string,
+    @Param('stock') stock: string,
+  ): Promise<object> {
+    const results = {
+      confidence: randomInt(10, 69), // get for quote
+      confidenceLevelText: 'High Confidence',
+      sentiment: 'Strong Buy',
+      recentPerformance: 3.42, // get for quote
+      recentPerformanceDirection: 'Up', // get for quote
+      current: 181.54,
+      target: 191.07,
+      potential: 5.25,
+      forecastPeriods: {
+        threeMonths: {
+          priceChange: 191.07,
+          priceChangePercent: 5.25,
+          sentiment: 'Strong Buy',
+          riskLevel: 'Low',
+          confidence: 85,
+        },
+        sixMonths: {
+          priceChange: 211.09,
+          priceChangePercent: 16.28,
+          sentiment: 'Buy',
+          riskLevel: 'Low',
+          confidence: 92,
+        },
+        oneYear: {
+          priceChange: 206.39,
+          priceChangePercent: 13.69,
+          sentiment: 'Buy',
+          riskLevel: 'Medium',
+          confidence: 78,
+        },
+      },
+      valuation: {
+        ProfitEarningsRatio: 28.5,
+        priceToBookRatio: 8.2,
+        enterpriseValue: 22.1,
+        marketCap: 2.8,
+      },
+      performance: {
+        ytdReturn: 18.2,
+        beta: 1.1,
+        fiftyTwoWeekRangeLow: 120,
+        fiftyTwoWeekRangeHigh: 195,
+        volatility30d: 22.5,
+      },
+      currentVolume: 100000000,
+      averageVolume: 90000000,
+      volumeAverageRatio: 1.1,
+      rsi14: 65,
+      volumeDistribution: {
+        timeframes: {
+          oneMonth: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+          threeMonths: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+          sixMonths: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+          oneYear: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+        },
+        analysisSummary: {
+          buyers: 60000,
+          buyersChange: 5,
+          sellers: 40000,
+          sellersChange: -3,
+        },
+      },
+      riskFactorExposures: [
+        {
+          name: 'Market',
+          value: 65,
+        },
+        {
+          name: 'Size',
+          value: 12,
+        },
+        {
+          name: 'Value',
+          value: 8,
+        },
+        {
+          name: 'Momentum',
+          value: 25,
+        },
+        {
+          name: 'Quality',
+          value: 5,
+        },
+        {
+          name: 'Volatility',
+          value: 18,
+        },
+      ],
+      riskFactorContribution: [
+        {
+          name: 'Market',
+          value: 65,
+        },
+        {
+          name: 'Size',
+          value: 12,
+        },
+        {
+          name: 'Value',
+          value: 8,
+        },
+        {
+          name: 'Momentum',
+          value: 25,
+        },
+        {
+          name: 'Quality',
+          value: 5,
+        },
+        {
+          name: 'Volatility',
+          value: 18,
+        },
+      ],
+      riskMetrics: {
+        correlation: 0.78,
+        valueAtRisk: -4.32,
+        expectedShortFall: -7.85,
+        maxDrawDown: -18.4,
+      },
+      priceHistory: [
+        {
+          date: '2024-06-01T04:00:00.000Z',
+          high: 18035,
+          volume: 107772060000,
+          open: 16865.69921875,
+          low: 16646.4296875,
+          close: 17732.599609375,
+          adjClose: 17732.599609375,
+        },
+        {
+          date: '2024-07-01T04:00:00.000Z',
+          high: 18671.0703125,
+          volume: 119005630000,
+          open: 17773.900390625,
+          low: 17015.380859375,
+          close: 17599.400390625,
+          adjClose: 17599.400390625,
+        },
+        {
+          date: '2024-08-01T04:00:00.000Z',
+          high: 18017.689453125,
+          volume: 121239310000,
+          open: 17647.029296875,
+          low: 15708.5400390625,
+          close: 17713.619140625,
+          adjClose: 17713.619140625,
+        },
+        {
+          date: '2024-09-01T04:00:00.000Z',
+          high: 18327.33984375,
+          volume: 110388680000,
+          open: 17585.44921875,
+          low: 16668.5703125,
+          close: 18189.169921875,
+          adjClose: 18189.169921875,
+        },
+        {
+          date: '2024-10-01T04:00:00.000Z',
+          high: 18785.5,
+          volume: 132373190000,
+          open: 18154.939453125,
+          low: 17767.7890625,
+          close: 18095.150390625,
+          adjClose: 18095.150390625,
+        },
+        {
+          date: '2024-11-01T04:00:00.000Z',
+          high: 19366.0703125,
+          volume: 146515010000,
+          open: 18189.669921875,
+          low: 18112.830078125,
+          close: 19218.169921875,
+          adjClose: 19218.169921875,
+        },
+        {
+          date: '2024-12-01T05:00:00.000Z',
+          high: 20204.580078125,
+          volume: 159134440000,
+          open: 19255.4296875,
+          low: 19168.380859375,
+          close: 19310.7890625,
+          adjClose: 19310.7890625,
+        },
+        {
+          date: '2025-01-01T05:00:00.000Z',
+          high: 20118.609375,
+          volume: 161608850000,
+          open: 19403.900390625,
+          low: 18831.91015625,
+          close: 19627.439453125,
+          adjClose: 19627.439453125,
+        },
+        {
+          date: '2025-02-01T05:00:00.000Z',
+          high: 20110.119140625,
+          volume: 150047820000,
+          open: 19215.380859375,
+          low: 18372.990234375,
+          close: 18847.279296875,
+          adjClose: 18847.279296875,
+        },
+        {
+          date: '2025-03-01T05:00:00.000Z',
+          high: 18992.30078125,
+          volume: 158800650000,
+          open: 18923.359375,
+          low: 16854.369140625,
+          close: 17299.2890625,
+          adjClose: 17299.2890625,
+        },
+        {
+          date: '2025-04-01T04:00:00.000Z',
+          high: 17716.51953125,
+          volume: 196411380000,
+          open: 17221.55078125,
+          low: 14784.0302734375,
+          close: 17446.33984375,
+          adjClose: 17446.33984375,
+        },
+        {
+          date: '2025-05-01T04:00:00.000Z',
+          high: 19389.390625,
+          volume: 281078560000,
+          open: 17793.140625,
+          low: 17503.009765625,
+          close: 19113.76953125,
+          adjClose: 19113.76953125,
+        },
+        {
+          date: '2025-05-30T21:15:59.000Z',
+          high: 19157.78125,
+          volume: 8294144000,
+          open: 19131.21875,
+          low: 18847.744140625,
+          close: 19113.765625,
+          adjClose: 19113.765625,
+        },
+      ],
+    };
+
+    return results;
+  }
+
+  @Get('forecast/:index/:stock')
+  async forecast(
+    @Param('index') index: string,
+    @Param('stock') stock: string,
+  ): Promise<object> {
+    const results = {
+      confidence: randomInt(10, 69), // get for quote
+      confidenceLevelText: 'High Confidence',
+      sentiment: 'Strong Buy',
+      recentPerformance: 3.42, // get for quote
+      recentPerformanceDirection: 'Up', // get for quote
+      current: 181.54,
+      target: 191.07,
+      potential: 5.25,
+      forecastPeriods: {
+        threeMonths: {
+          priceChange: 191.07,
+          priceChangePercent: 5.25,
+          sentiment: 'Strong Buy',
+          riskLevel: 'Low',
+          confidence: 85,
+        },
+        sixMonths: {
+          priceChange: 211.09,
+          priceChangePercent: 16.28,
+          sentiment: 'Buy',
+          riskLevel: 'Low',
+          confidence: 92,
+        },
+        oneYear: {
+          priceChange: 206.39,
+          priceChangePercent: 13.69,
+          sentiment: 'Buy',
+          riskLevel: 'Medium',
+          confidence: 78,
+        },
+      },
+      valuation: {
+        ProfitEarningsRatio: 28.5,
+        priceToBookRatio: 8.2,
+        enterpriseValue: 22.1,
+        marketCap: 2.8,
+      },
+      performance: {
+        ytdReturn: 18.2,
+        beta: 1.1,
+        fiftyTwoWeekRangeLow: 120,
+        fiftyTwoWeekRangeHigh: 195,
+        volatility30d: 22.5,
+      },
+      currentVolume: 100000000,
+      averageVolume: 90000000,
+      volumeAverageRatio: 1.1,
+      rsi14: 65,
+      volumeDistribution: {
+        timeframes: {
+          oneMonth: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+          threeMonths: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+          sixMonths: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+          oneYear: {
+            buyers: 60000,
+            sellers: 40000,
+          },
+        },
+        analysisSummary: {
+          buyers: 60000,
+          buyersChange: 5,
+          sellers: 40000,
+          sellersChange: -3,
+        },
+      },
+      riskFactorExposures: [
+        {
+          name: 'Market',
+          value: 65,
+        },
+        {
+          name: 'Size',
+          value: 12,
+        },
+        {
+          name: 'Value',
+          value: 8,
+        },
+        {
+          name: 'Momentum',
+          value: 25,
+        },
+        {
+          name: 'Quality',
+          value: 5,
+        },
+        {
+          name: 'Volatility',
+          value: 18,
+        },
+      ],
+      riskFactorContribution: [
+        {
+          name: 'Market',
+          value: 65,
+        },
+        {
+          name: 'Size',
+          value: 12,
+        },
+        {
+          name: 'Value',
+          value: 8,
+        },
+        {
+          name: 'Momentum',
+          value: 25,
+        },
+        {
+          name: 'Quality',
+          value: 5,
+        },
+        {
+          name: 'Volatility',
+          value: 18,
+        },
+      ],
+      riskMetrics: {
+        correlation: 0.78,
+        valueAtRisk: -4.32,
+        expectedShortFall: -7.85,
+        maxDrawDown: -18.4,
+      },
+      priceHistory: [
+        {
+          date: '2024-06-01T04:00:00.000Z',
+          high: 18035,
+          volume: 107772060000,
+          open: 16865.69921875,
+          low: 16646.4296875,
+          close: 17732.599609375,
+          adjClose: 17732.599609375,
+        },
+        {
+          date: '2024-07-01T04:00:00.000Z',
+          high: 18671.0703125,
+          volume: 119005630000,
+          open: 17773.900390625,
+          low: 17015.380859375,
+          close: 17599.400390625,
+          adjClose: 17599.400390625,
+        },
+        {
+          date: '2024-08-01T04:00:00.000Z',
+          high: 18017.689453125,
+          volume: 121239310000,
+          open: 17647.029296875,
+          low: 15708.5400390625,
+          close: 17713.619140625,
+          adjClose: 17713.619140625,
+        },
+        {
+          date: '2024-09-01T04:00:00.000Z',
+          high: 18327.33984375,
+          volume: 110388680000,
+          open: 17585.44921875,
+          low: 16668.5703125,
+          close: 18189.169921875,
+          adjClose: 18189.169921875,
+        },
+        {
+          date: '2024-10-01T04:00:00.000Z',
+          high: 18785.5,
+          volume: 132373190000,
+          open: 18154.939453125,
+          low: 17767.7890625,
+          close: 18095.150390625,
+          adjClose: 18095.150390625,
+        },
+        {
+          date: '2024-11-01T04:00:00.000Z',
+          high: 19366.0703125,
+          volume: 146515010000,
+          open: 18189.669921875,
+          low: 18112.830078125,
+          close: 19218.169921875,
+          adjClose: 19218.169921875,
+        },
+        {
+          date: '2024-12-01T05:00:00.000Z',
+          high: 20204.580078125,
+          volume: 159134440000,
+          open: 19255.4296875,
+          low: 19168.380859375,
+          close: 19310.7890625,
+          adjClose: 19310.7890625,
+        },
+        {
+          date: '2025-01-01T05:00:00.000Z',
+          high: 20118.609375,
+          volume: 161608850000,
+          open: 19403.900390625,
+          low: 18831.91015625,
+          close: 19627.439453125,
+          adjClose: 19627.439453125,
+        },
+        {
+          date: '2025-02-01T05:00:00.000Z',
+          high: 20110.119140625,
+          volume: 150047820000,
+          open: 19215.380859375,
+          low: 18372.990234375,
+          close: 18847.279296875,
+          adjClose: 18847.279296875,
+        },
+        {
+          date: '2025-03-01T05:00:00.000Z',
+          high: 18992.30078125,
+          volume: 158800650000,
+          open: 18923.359375,
+          low: 16854.369140625,
+          close: 17299.2890625,
+          adjClose: 17299.2890625,
+        },
+        {
+          date: '2025-04-01T04:00:00.000Z',
+          high: 17716.51953125,
+          volume: 196411380000,
+          open: 17221.55078125,
+          low: 14784.0302734375,
+          close: 17446.33984375,
+          adjClose: 17446.33984375,
+        },
+        {
+          date: '2025-05-01T04:00:00.000Z',
+          high: 19389.390625,
+          volume: 281078560000,
+          open: 17793.140625,
+          low: 17503.009765625,
+          close: 19113.76953125,
+          adjClose: 19113.76953125,
+        },
+        {
+          date: '2025-05-30T21:15:59.000Z',
+          high: 19157.78125,
+          volume: 8294144000,
+          open: 19131.21875,
+          low: 18847.744140625,
+          close: 19113.765625,
+          adjClose: 19113.765625,
+        },
+      ],
+    };
+
+    return results;
   }
 
   @UseInterceptors(CacheInterceptor)
@@ -774,7 +1330,7 @@ function getReturns(prices: any[]): number[] {
 
 const today = new Date();
 const startDate = new Date();
-startDate.setFullYear(today.getFullYear() - 1);
+startDate.setFullYear(today.getFullYear() - 3);
 startDate.setDate(startDate.getDate() - 60);
 
 async function fetchHistoricalData(symbol: string) {

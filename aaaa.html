@@ -1,0 +1,116 @@
+<canvas id="forecastChart" width="800" height="400"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+<script>
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+
+    const pastData = [13, 12.5, 12.3, 12.1, 11.7, 11.4, 11.2, 11.0]; // Historical
+    const forecastStart = pastData[pastData.length - 1];
+
+    const labels = ['T-7', 'T-6', 'T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'Now', 'High', 'Median', 'Low'];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Past',
+                    data: [...pastData, null, null, null],
+                    borderColor: 'red',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.3,
+                },
+                {
+                    label: 'High',
+                    data: [...Array(pastData.length).fill(null), forecastStart, 13, 14],
+                    borderColor: '#198754',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0,
+                },
+                {
+                    label: 'Median',
+                    data: [...Array(pastData.length).fill(null), forecastStart, 11, 11],
+                    borderColor: 'black',
+                    borderDash: [2, 2],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0,
+                },
+                {
+                    label: 'Low',
+                    data: [...Array(pastData.length).fill(null), forecastStart, 9, 8],
+                    borderColor: '#dc3545',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0,
+                },
+                {
+                    label: 'Now',
+                    data: [...Array(pastData.length - 1).fill(null), forecastStart],
+                    pointRadius: 6,
+                    pointBackgroundColor: 'black',
+                    type: 'line',
+                    showLine: false
+                }
+            ]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: 'index', intersect: false },
+                annotation: {
+                    annotations: {
+                        highLabel: {
+                            type: 'label',
+                            xValue: 'High',
+                            yValue: 14,
+                            content: ['High', '$14.00', '59.27% ▲'],
+                            color: '#198754',
+                            position: 'start',
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'left'
+                        },
+                        medianLabel: {
+                            type: 'label',
+                            xValue: 'Median',
+                            yValue: 11,
+                            content: ['Median', '$11.00', '25.14% ▲'],
+                            color: 'black',
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'left'
+                        },
+                        lowLabel: {
+                            type: 'label',
+                            xValue: 'Low',
+                            yValue: 8,
+                            content: ['Low', '$8.00', '8.99% ▼'],
+                            color: '#dc3545',
+                            font: { size: 12, weight: 'bold' },
+                            textAlign: 'left'
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: { display: true, text: 'Time' }
+                },
+                y: {
+                    suggestedMin: 7,
+                    suggestedMax: 15,
+                    title: { display: true, text: 'Price ($)' }
+                }
+            }
+        }
+    });
+</script>
