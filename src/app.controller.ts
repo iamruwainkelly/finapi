@@ -23,15 +23,17 @@ import { IndexPerformance } from './typings/IndexPerformance';
 import { IndexQuote } from './typings/IndexQuote';
 
 // prediction
-import * as prediction from './helpers/prediction.js';
+import * as prediction from './helpers/modules/prediction.js';
 import { YahooHistoric } from './typings/YahooHistoric';
 import { MarketMover } from './entities/marketMover.entity';
 import { News } from './entities/news.entity';
 import { Stock } from './entities/stock.entity';
 import { randomInt } from 'node:crypto';
 
-// import metrics.js
-// import { Metrics } from './helpers/metrics.js';
+// import metrics.ts
+import { computeMetrics, getMetrics } from './helpers/modules/metrics';
+import { Metrics } from './typings/Metrics';
+import { QuoteSummaryResult } from 'yahoo-finance2/dist/esm/src/modules/quoteSummary-iface';
 
 interface Historic {
   adjClose?: number | undefined;
@@ -74,8 +76,6 @@ const calculateHistoricChangeByDate = (
     };
   });
 
-  // console.log('date', date);
-
   // declare todays date
   const today = new Date();
 
@@ -83,8 +83,6 @@ const calculateHistoricChangeByDate = (
   let lookupEntry = historic.find(
     (result) => result.dateString === date.toISOString().split('T')[0],
   );
-
-  // console.log('date-lookup1.1', lookupEntry);
 
   // if the entry is not found, starting from the end of the array, find the first entry where the dateTicks is less than dt
   if (!lookupEntry) {
@@ -95,8 +93,6 @@ const calculateHistoricChangeByDate = (
       }
     }
   }
-
-  // console.log('date-lookup1.2', lookupEntry);
 
   // get the last entry in the array
   const lastEntry = historic[historic.length - 1];
@@ -180,14 +176,13 @@ export class AppController {
     };
   }
 
-  //@UseInterceptors(CacheInterceptor)
-  // cache for 1 day
-  //@CacheTTL(60 * 60 * 24)
   @Get('history/daily/:symbol')
-  async historyDaily(@Param() params: any): Promise<object> {
-    // return history from yahoo finance
+  async historyDaily(@Param() params: any): Promise<YahooHistoric[]> {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
     const results = await yahooFinance.historical(params.symbol, {
-      period1: '2020-01-01',
+      period1: oneYearAgo,
       period2: new Date(),
       interval: '1d',
     });
@@ -210,348 +205,136 @@ export class AppController {
     return results;
   }
 
-  @Get('moreCash/:index/:stock')
-  async moreCash(
-    @Param('index') index: string,
-    @Param('stock') stock: string,
-  ): Promise<object> {
-    const results = {
-      confidence: randomInt(10, 69), // get for quote
-      confidenceLevelText: 'High Confidence',
-      sentiment: 'Strong Buy',
-      recentPerformance: 3.42, // get for quote
-      recentPerformanceDirection: 'Up', // get for quote
-      current: 181.54,
-      target: 191.07,
-      potential: 5.25,
-      forecastPeriods: {
-        threeMonths: {
-          priceChange: 191.07,
-          priceChangePercent: 5.25,
-          sentiment: 'Strong Buy',
-          riskLevel: 'Low',
-          confidence: 85,
-        },
-        sixMonths: {
-          priceChange: 211.09,
-          priceChangePercent: 16.28,
-          sentiment: 'Buy',
-          riskLevel: 'Low',
-          confidence: 92,
-        },
-        oneYear: {
-          priceChange: 206.39,
-          priceChangePercent: 13.69,
-          sentiment: 'Buy',
-          riskLevel: 'Medium',
-          confidence: 78,
-        },
-      },
-      valuation: {
-        ProfitEarningsRatio: 28.5,
-        priceToBookRatio: 8.2,
-        enterpriseValue: 22.1,
-        marketCap: 2.8,
-      },
-      performance: {
-        ytdReturn: 18.2,
-        beta: 1.1,
-        fiftyTwoWeekRangeLow: 120,
-        fiftyTwoWeekRangeHigh: 195,
-        volatility30d: 22.5,
-      },
-      currentVolume: 100000000,
-      averageVolume: 90000000,
-      volumeAverageRatio: 1.1,
-      rsi14: 65,
-      volumeDistribution: {
-        timeframes: {
-          oneMonth: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-          threeMonths: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-          sixMonths: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-          oneYear: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-        },
-        analysisSummary: {
-          buyers: 60000,
-          buyersChange: 5,
-          sellers: 40000,
-          sellersChange: -3,
-        },
-      },
-      riskFactorExposures: [
-        {
-          name: 'Market',
-          value: 65,
-        },
-        {
-          name: 'Size',
-          value: 12,
-        },
-        {
-          name: 'Value',
-          value: 8,
-        },
-        {
-          name: 'Momentum',
-          value: 25,
-        },
-        {
-          name: 'Quality',
-          value: 5,
-        },
-        {
-          name: 'Volatility',
-          value: 18,
-        },
-      ],
-      riskFactorContribution: [
-        {
-          name: 'Market',
-          value: 65,
-        },
-        {
-          name: 'Size',
-          value: 12,
-        },
-        {
-          name: 'Value',
-          value: 8,
-        },
-        {
-          name: 'Momentum',
-          value: 25,
-        },
-        {
-          name: 'Quality',
-          value: 5,
-        },
-        {
-          name: 'Volatility',
-          value: 18,
-        },
-      ],
-      riskMetrics: {
-        correlation: 0.78,
-        valueAtRisk: -4.32,
-        expectedShortFall: -7.85,
-        maxDrawDown: -18.4,
-      },
-      priceHistory: [
-        {
-          date: '2024-06-01T04:00:00.000Z',
-          high: 18035,
-          volume: 107772060000,
-          open: 16865.69921875,
-          low: 16646.4296875,
-          close: 17732.599609375,
-          adjClose: 17732.599609375,
-        },
-        {
-          date: '2024-07-01T04:00:00.000Z',
-          high: 18671.0703125,
-          volume: 119005630000,
-          open: 17773.900390625,
-          low: 17015.380859375,
-          close: 17599.400390625,
-          adjClose: 17599.400390625,
-        },
-        {
-          date: '2024-08-01T04:00:00.000Z',
-          high: 18017.689453125,
-          volume: 121239310000,
-          open: 17647.029296875,
-          low: 15708.5400390625,
-          close: 17713.619140625,
-          adjClose: 17713.619140625,
-        },
-        {
-          date: '2024-09-01T04:00:00.000Z',
-          high: 18327.33984375,
-          volume: 110388680000,
-          open: 17585.44921875,
-          low: 16668.5703125,
-          close: 18189.169921875,
-          adjClose: 18189.169921875,
-        },
-        {
-          date: '2024-10-01T04:00:00.000Z',
-          high: 18785.5,
-          volume: 132373190000,
-          open: 18154.939453125,
-          low: 17767.7890625,
-          close: 18095.150390625,
-          adjClose: 18095.150390625,
-        },
-        {
-          date: '2024-11-01T04:00:00.000Z',
-          high: 19366.0703125,
-          volume: 146515010000,
-          open: 18189.669921875,
-          low: 18112.830078125,
-          close: 19218.169921875,
-          adjClose: 19218.169921875,
-        },
-        {
-          date: '2024-12-01T05:00:00.000Z',
-          high: 20204.580078125,
-          volume: 159134440000,
-          open: 19255.4296875,
-          low: 19168.380859375,
-          close: 19310.7890625,
-          adjClose: 19310.7890625,
-        },
-        {
-          date: '2025-01-01T05:00:00.000Z',
-          high: 20118.609375,
-          volume: 161608850000,
-          open: 19403.900390625,
-          low: 18831.91015625,
-          close: 19627.439453125,
-          adjClose: 19627.439453125,
-        },
-        {
-          date: '2025-02-01T05:00:00.000Z',
-          high: 20110.119140625,
-          volume: 150047820000,
-          open: 19215.380859375,
-          low: 18372.990234375,
-          close: 18847.279296875,
-          adjClose: 18847.279296875,
-        },
-        {
-          date: '2025-03-01T05:00:00.000Z',
-          high: 18992.30078125,
-          volume: 158800650000,
-          open: 18923.359375,
-          low: 16854.369140625,
-          close: 17299.2890625,
-          adjClose: 17299.2890625,
-        },
-        {
-          date: '2025-04-01T04:00:00.000Z',
-          high: 17716.51953125,
-          volume: 196411380000,
-          open: 17221.55078125,
-          low: 14784.0302734375,
-          close: 17446.33984375,
-          adjClose: 17446.33984375,
-        },
-        {
-          date: '2025-05-01T04:00:00.000Z',
-          high: 19389.390625,
-          volume: 281078560000,
-          open: 17793.140625,
-          low: 17503.009765625,
-          close: 19113.76953125,
-          adjClose: 19113.76953125,
-        },
-        {
-          date: '2025-05-30T21:15:59.000Z',
-          high: 19157.78125,
-          volume: 8294144000,
-          open: 19131.21875,
-          low: 18847.744140625,
-          close: 19113.765625,
-          adjClose: 19113.765625,
-        },
-      ],
-    };
+  calculateRSI = (priceHistory: YahooHistoric[], period = 14) => {
+    // get the last 60 days - // Get enough data for smoothing
+    priceHistory = priceHistory.slice(-60);
 
-    return results;
-  }
+    const closes = priceHistory.map((d) => d.close);
+    if (closes.length < period) {
+      console.log(`Not enough data to calculate RSI(${period})`);
+      return null;
+    }
 
+    let gains = 0,
+      losses = 0;
+    for (let i = 1; i <= period; i++) {
+      const diff = closes[i] - closes[i - 1];
+      if (diff >= 0) gains += diff;
+      else losses -= diff;
+    }
+
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+
+    for (let i = period + 1; i < closes.length; i++) {
+      const diff = closes[i] - closes[i - 1];
+      avgGain = (avgGain * (period - 1) + Math.max(diff, 0)) / period;
+      avgLoss = (avgLoss * (period - 1) + Math.max(-diff, 0)) / period;
+    }
+
+    const rs = avgGain / avgLoss;
+    const rsi = 100 - 100 / (1 + rs);
+
+    return rsi;
+  };
+
+  @UseInterceptors(CacheInterceptor)
+  // cache for 1 day
+  @CacheTTL(60 * 60 * 24)
   @Get('forecast/:index/:stock')
   async forecast(
     @Param('index') index: string,
     @Param('stock') stock: string,
   ): Promise<object> {
+    // get quote for the stock
+    const quote: any = await this.quote({ symbol: stock });
+    const quoteSummary = await this.quoteSummary({ symbol: stock });
+
+    // get metrics for the stock
+    const metrics: Metrics = await getMetrics(stock);
+    // get historic data for the stock
+    const history = await this.historyDaily({ symbol: stock });
+
+    const peRatio = quoteSummary.summaryDetail?.trailingPE;
+    const pbRatio = quoteSummary.defaultKeyStatistics?.priceToBook;
+
+    let evToEbitda;
+    const ev = quoteSummary?.defaultKeyStatistics?.enterpriseValue;
+    const ebitda = quoteSummary.financialData?.ebitda;
+    if (!ev || !ebitda) {
+      evToEbitda = null;
+    } else {
+      evToEbitda = ev / ebitda;
+    }
+
+    // calculate ytdReturn from price history
+    // get the first entry in history
+    const firstEntry = history[0];
+    // get the last entry in history
+    const lastEntry = history[history.length - 1];
+
+    let ytdReturn = await this.calculateYTD(stock);
+
+    const beta = quoteSummary.defaultKeyStatistics?.beta;
+
+    // calculate 30d volatility
+
+    // first use the last 45 days of history
+    // 45 to account for non-trading days
+    const last45Days = history.slice(-45);
+    const closes = last45Days.map((d) => d.close).filter(Boolean);
+    //
+    const returns = closes
+      .slice(1)
+      .map((price, i) => Math.log(price / closes[i]));
+    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const squaredDiffs = returns.map((r) => Math.pow(r - mean, 2));
+    const variance =
+      squaredDiffs.reduce((a, b) => a + b, 0) / squaredDiffs.length;
+    const stdDev = Math.sqrt(variance);
+    const volatility30d = stdDev * Math.sqrt(252) * 100;
+
+    const currentVolume = quoteSummary.price?.regularMarketVolume;
+    const averageVolume =
+      quoteSummary.summaryDetail?.averageVolume ||
+      quoteSummary.summaryDetail?.averageDailyVolume10Day;
+
+    const rsi14 = this.calculateRSI(history, 14);
+
+    // calc Vol/Avg Ratio
+    const volumeAverageRatio = (currentVolume ?? 0) / (averageVolume ?? 1);
+
     const results = {
-      confidence: randomInt(10, 69), // get for quote
-      confidenceLevelText: 'High Confidence',
-      sentiment: 'Strong Buy',
+      // confidence: randomInt(10, 69), // get for quote
+      // confidenceLevelText: 'High Confidence',
+      // sentiment: 'Strong Buy',
       recentPerformance: 3.42, // get for quote
       recentPerformanceDirection: 'Up', // get for quote
       current: 181.54,
-      target: 191.07,
-      potential: 5.25,
-      forecastPeriods: {
-        threeMonths: {
-          priceChange: 191.07,
-          priceChangePercent: 5.25,
-          sentiment: 'Strong Buy',
-          riskLevel: 'Low',
-          confidence: 85,
-        },
-        sixMonths: {
-          priceChange: 211.09,
-          priceChangePercent: 16.28,
-          sentiment: 'Buy',
-          riskLevel: 'Low',
-          confidence: 92,
-        },
-        oneYear: {
-          priceChange: 206.39,
-          priceChangePercent: 13.69,
-          sentiment: 'Buy',
-          riskLevel: 'Medium',
-          confidence: 78,
-        },
-      },
+      // target: 191.07,
+      // potential: 5.25,
+      quote: quote,
+      quoteSummary: quoteSummary,
+      forecastPeriods: metrics,
       valuation: {
-        ProfitEarningsRatio: 28.5,
-        priceToBookRatio: 8.2,
-        enterpriseValue: 22.1,
-        marketCap: 2.8,
+        peRatio: peRatio,
+        pbRatio: pbRatio,
+        evToEbitda: evToEbitda,
+        marketCap: quote.marketCap,
       },
       performance: {
-        ytdReturn: 18.2,
-        beta: 1.1,
-        fiftyTwoWeekRangeLow: 120,
-        fiftyTwoWeekRangeHigh: 195,
-        volatility30d: 22.5,
+        ytdReturn: ytdReturn,
+        beta: beta,
+        fiftyTwoWeekRangeLow:
+          quoteSummary.summaryDetail?.fiftyTwoWeekLow ?? null,
+        fiftyTwoWeekRangeHigh:
+          quoteSummary.summaryDetail?.fiftyTwoWeekHigh ?? null,
+        volatility30d: volatility30d,
       },
-      currentVolume: 100000000,
-      averageVolume: 90000000,
-      volumeAverageRatio: 1.1,
-      rsi14: 65,
-      volumeDistribution: {
-        timeframes: {
-          oneMonth: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-          threeMonths: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-          sixMonths: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-          oneYear: {
-            buyers: 60000,
-            sellers: 40000,
-          },
-        },
-        analysisSummary: {
-          buyers: 60000,
-          buyersChange: 5,
-          sellers: 40000,
-          sellersChange: -3,
-        },
-      },
+      currentVolume: currentVolume,
+      averageVolume: averageVolume,
+      volumeAverageRatio: volumeAverageRatio,
+      rsi14: rsi14,
       riskFactorExposures: [
         {
           name: 'Market',
@@ -610,125 +393,7 @@ export class AppController {
         expectedShortFall: -7.85,
         maxDrawDown: -18.4,
       },
-      priceHistory: [
-        {
-          date: '2024-06-01T04:00:00.000Z',
-          high: 18035,
-          volume: 107772060000,
-          open: 16865.69921875,
-          low: 16646.4296875,
-          close: 17732.599609375,
-          adjClose: 17732.599609375,
-        },
-        {
-          date: '2024-07-01T04:00:00.000Z',
-          high: 18671.0703125,
-          volume: 119005630000,
-          open: 17773.900390625,
-          low: 17015.380859375,
-          close: 17599.400390625,
-          adjClose: 17599.400390625,
-        },
-        {
-          date: '2024-08-01T04:00:00.000Z',
-          high: 18017.689453125,
-          volume: 121239310000,
-          open: 17647.029296875,
-          low: 15708.5400390625,
-          close: 17713.619140625,
-          adjClose: 17713.619140625,
-        },
-        {
-          date: '2024-09-01T04:00:00.000Z',
-          high: 18327.33984375,
-          volume: 110388680000,
-          open: 17585.44921875,
-          low: 16668.5703125,
-          close: 18189.169921875,
-          adjClose: 18189.169921875,
-        },
-        {
-          date: '2024-10-01T04:00:00.000Z',
-          high: 18785.5,
-          volume: 132373190000,
-          open: 18154.939453125,
-          low: 17767.7890625,
-          close: 18095.150390625,
-          adjClose: 18095.150390625,
-        },
-        {
-          date: '2024-11-01T04:00:00.000Z',
-          high: 19366.0703125,
-          volume: 146515010000,
-          open: 18189.669921875,
-          low: 18112.830078125,
-          close: 19218.169921875,
-          adjClose: 19218.169921875,
-        },
-        {
-          date: '2024-12-01T05:00:00.000Z',
-          high: 20204.580078125,
-          volume: 159134440000,
-          open: 19255.4296875,
-          low: 19168.380859375,
-          close: 19310.7890625,
-          adjClose: 19310.7890625,
-        },
-        {
-          date: '2025-01-01T05:00:00.000Z',
-          high: 20118.609375,
-          volume: 161608850000,
-          open: 19403.900390625,
-          low: 18831.91015625,
-          close: 19627.439453125,
-          adjClose: 19627.439453125,
-        },
-        {
-          date: '2025-02-01T05:00:00.000Z',
-          high: 20110.119140625,
-          volume: 150047820000,
-          open: 19215.380859375,
-          low: 18372.990234375,
-          close: 18847.279296875,
-          adjClose: 18847.279296875,
-        },
-        {
-          date: '2025-03-01T05:00:00.000Z',
-          high: 18992.30078125,
-          volume: 158800650000,
-          open: 18923.359375,
-          low: 16854.369140625,
-          close: 17299.2890625,
-          adjClose: 17299.2890625,
-        },
-        {
-          date: '2025-04-01T04:00:00.000Z',
-          high: 17716.51953125,
-          volume: 196411380000,
-          open: 17221.55078125,
-          low: 14784.0302734375,
-          close: 17446.33984375,
-          adjClose: 17446.33984375,
-        },
-        {
-          date: '2025-05-01T04:00:00.000Z',
-          high: 19389.390625,
-          volume: 281078560000,
-          open: 17793.140625,
-          low: 17503.009765625,
-          close: 19113.76953125,
-          adjClose: 19113.76953125,
-        },
-        {
-          date: '2025-05-30T21:15:59.000Z',
-          high: 19157.78125,
-          volume: 8294144000,
-          open: 19131.21875,
-          low: 18847.744140625,
-          close: 19113.765625,
-          adjClose: 19113.765625,
-        },
-      ],
+      priceHistory: history,
     };
 
     return results;
@@ -769,11 +434,7 @@ export class AppController {
 
   @Get('gainers/:symbol')
   async gainers(@Param() params: any): Promise<object> {
-    // console.log('symbol', params.symbol);
-
     const results = await yahooFinance.dailyGainers(params.symbol);
-
-    //results[0].
 
     return results;
   }
@@ -826,6 +487,76 @@ export class AppController {
     };
   }
 
+  async calculateYTD(ticker: string) {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    try {
+      // Fetch historical data from Jan 1 to now
+      const historical = await yahooFinance.historical(ticker, {
+        period1: yearStart,
+        period2: now,
+        interval: '1d',
+      });
+
+      if (!historical.length) {
+        console.log(`No historical data found for ${ticker}`);
+        return null;
+      }
+
+      const startPrice = historical[0].close;
+      const latestPrice = historical[historical.length - 1].close;
+
+      const ytdChangeDecimal = (latestPrice - startPrice) / startPrice;
+      const ytdChangePercent = ytdChangeDecimal * 100;
+
+      console.log(
+        `${ticker} YTD Change (decimal): ${ytdChangeDecimal.toFixed(4)}`,
+      );
+      console.log(`${ticker} YTD Return (%): ${ytdChangePercent.toFixed(2)}%`);
+
+      return {
+        ticker,
+        startPrice,
+        latestPrice,
+        ytdChangeDecimal: +ytdChangeDecimal.toFixed(4),
+        ytdReturnPercent: +ytdChangePercent.toFixed(2),
+      };
+    } catch (error) {
+      console.error(`Error fetching YTD data for ${ticker}:`, error);
+      return null;
+    }
+  }
+
+  async performanceDate(symbol: string, date: Date): Promise<PerformanceDays> {
+    // get history from the database, where symbol is the same as params.symbol
+    const history = await this.dataSource
+      .getRepository(History)
+      .createQueryBuilder('history')
+      .where('history.symbol = :symbol', { symbol: symbol })
+      .orderBy('history.date', 'ASC')
+      .getMany();
+
+    // Sort history by date in ascending order
+    history.sort((a, b) => a.date - b.date);
+
+    // find the first entry in history where the date is greater than or equal to the date parameter
+    const firstEntry = history.find(
+      (entry) => new Date(entry.date).getTime() >= date.getTime(),
+    );
+
+    const first = firstEntry?.close || 0;
+    const last = history[history.length - 1].close;
+
+    const priceChange = last - first;
+    const priceChangePercentage = (priceChange / first) * 100;
+
+    return {
+      priceChange: priceChange,
+      priceChangePercentage: priceChangePercentage,
+    };
+  }
+
   @Get('performance/:symbol')
   async performance(@Param() params: any): Promise<IndexPerformance> {
     // get the history from the database, where symbol is the same as params.symbol
@@ -851,6 +582,11 @@ export class AppController {
     // 252 days is approximately 1 year of trading days
     const last255 = await this.performanceDays(params.symbol, 255);
 
+    const ytd = await this.performanceDate(
+      params.symbol,
+      new Date(new Date().getFullYear(), 0, 1), // January 1st of the current year
+    );
+
     return {
       symbol: params.symbol,
       performance: {
@@ -874,20 +610,29 @@ export class AppController {
           change: last255.priceChange,
           changePercent: last255.priceChangePercentage,
         },
+        yearToDate: {
+          change: ytd.priceChange,
+          changePercent: ytd.priceChangePercentage,
+        },
       },
     };
   }
 
   // quoteSummary
   @Get('quote-summary/:symbol')
-  async quoteSummary(@Param() params: any): Promise<object> {
-    console.log('symbol', params.symbol);
-
+  async quoteSummary(@Param() params: any): Promise<QuoteSummaryResult> {
     // const results = await yahooFinance.quoteSummary(params.symbol, {
     //   modules: ['financialData', 'summaryDetail'],
     // });
-    const results = await yahooFinance.quoteSummary(params.symbol);
-
+    // const results = await yahooFinance.quoteSummary(params.symbol);
+    const results = await yahooFinance.quoteSummary(params.symbol, {
+      modules: [
+        'defaultKeyStatistics',
+        'financialData',
+        'summaryDetail',
+        'price',
+      ],
+    });
     // results.
 
     return results;
@@ -1188,6 +933,9 @@ export class AppController {
       // get the market movers for the index
       const marketMovers = await this.marketMovers(index.symbol);
 
+      // forecast the index
+      const forecast = await this.forecast(index.symbol, index.symbol);
+
       // return the dashboard object for the index
       return {
         symbol: index.symbol,
@@ -1195,6 +943,7 @@ export class AppController {
         performance: performance,
         news: news,
         marketMovers: marketMovers,
+        forecast: forecast,
       };
     });
 

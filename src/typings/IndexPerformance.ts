@@ -9,6 +9,7 @@ export interface PerformanceDetails {
   threeMonths: PeriodPerformance;
   sixMonths: PeriodPerformance;
   oneYear: PeriodPerformance;
+  yearToDate: PeriodPerformance;
 }
 
 export interface IndexPerformance {
