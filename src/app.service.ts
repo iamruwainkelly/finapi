@@ -18,7 +18,7 @@ import { IndexQuote } from './typings/IndexQuote';
 import { Cron } from './entities/cron.entity';
 import { Setting } from './entities/setting.entity';
 import { History } from './entities/history.entity';
-import { GainersAndLosers } from './typings/MarketMover';
+
 import { chromium, LaunchOptions, Browser } from 'playwright';
 import { MarketMover } from './entities/marketMover.entity';
 import { News } from './entities/news.entity';
@@ -26,6 +26,9 @@ import { News } from './entities/news.entity';
 import { Logger as TypeOrmLogger } from 'typeorm';
 
 import { LogEntry } from './entities/logentry.entity';
+
+import { extractStocks, getTopMovers } from './helpers/modules/movers';
+import { log } from 'node:console';
 
 const options: LaunchOptions = {
   headless: true,
@@ -703,7 +706,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getIndexGainersAndLosers(symbol: string): Promise<GainersAndLosers> {
+  async getIndexGainersAndLosers(symbol: string): Promise<object> {
     // check if the index is valid
     const indexRepository = this.dataSource.getRepository(Index);
     const index = await indexRepository.findOne({
@@ -732,45 +735,15 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // parse the json and get the data from the props object
     const data = JSON.parse(json);
 
-    // Access specific data, for example, pageProps
-    const pageProps = data.props.pageProps.state.quotesStore.quotes;
-
-    let GainersAndLosers: GainersAndLosers = {
-      gainers: [],
-      losers: [],
-    };
-
-    // loop through array
-    for (let i = 0; i < pageProps.length; i++) {
-      const prop = pageProps[i];
-
-      // each prop is an array
-      for (let j = 0; j < prop.length; j++) {
-        const item = prop[j];
-
-        switch (typeof item) {
-          case 'string':
-            //console.log('String:', item); // log the string
-
-            // if item string ends with 'stocks.gainersLosers'
-            if (item.endsWith('stocks.gainersLosers')) {
-              // check that item starts with 'indexLosers'
-              if (item.startsWith('indexLosers')) {
-                // get the next item in the array
-                GainersAndLosers.losers = prop[1]._collection;
-              } else if (item.startsWith('indexGainers')) {
-                // get the next item in the array
-                GainersAndLosers.gainers = prop[1]._collection;
-              }
-            }
-
-            break;
-        }
-      }
-    }
+    const stocks = extractStocks(data);
+    const gainers = getTopMovers(stocks, 'Up');
+    const losers = getTopMovers(stocks, 'Down');
 
     // return the GainersAndLosers object
-    return GainersAndLosers;
+    return {
+      gainers: gainers,
+      losers: losers,
+    };
   }
 
   // create function 'getIndexMarketMovers' to get market-movers for each index
@@ -824,13 +797,16 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         });
       }
 
-      let GainersAndLosers: GainersAndLosers = {
-        gainers: [],
-        losers: [],
-      };
+      // let GainersAndLosers: GainersAndLosers = {
+      //   gainers: [],
+      //   losers: [],
+      // };
 
       if (refetch) {
-        GainersAndLosers = await this.getIndexGainersAndLosers(index.symbol);
+        //GainersAndLosers = await this.getIndexGainersAndLosers(index.symbol);
+        const gainersAndLosers = await this.getIndexGainersAndLosers(
+          index.symbol,
+        );
 
         // delete all existing market movers for this index
         await marketMoverRepository.delete({ symbol: index.symbol });
@@ -839,7 +815,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         // save the GainersAndLosers to the json field of the MarketMover entity
         const marketMover = new MarketMover();
         marketMover.symbol = index.symbol;
-        marketMover.json = JSON.stringify(GainersAndLosers);
+        marketMover.json = JSON.stringify(gainersAndLosers);
         marketMover.created = new Date().getTime();
         await marketMoverRepository.save(marketMover);
         this.dataSource.getRepository(LogEntry).save({
