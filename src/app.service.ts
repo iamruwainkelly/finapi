@@ -1,4 +1,3 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Index } from './entities/index.entity';
 // stock
 import { Stock } from './entities/stock.entity'; // Assuming you have a Stock entity
@@ -12,12 +11,12 @@ import { MarketIndex } from './typings/MarketIndex';
 import { MarketSymbol } from './typings/MarketSymbol';
 
 import * as cheerio from 'cheerio';
-import yahooFinance from 'yahoo-finance2';
-import { Quote } from './entities/quote.entity';
-import { IndexQuote } from './typings/IndexQuote';
+import { Quote as QuoteEntity } from './entities/quote.entity';
+import { Quote } from './typings/Quote';
 import { Cron } from './entities/cron.entity';
 import { Setting } from './entities/setting.entity';
 import { History } from './entities/history.entity';
+import { Etf } from './entities/etf.entity';
 
 import { chromium, LaunchOptions, Browser } from 'playwright';
 import { MarketMover } from './entities/marketMover.entity';
@@ -28,7 +27,14 @@ import { Logger as TypeOrmLogger } from 'typeorm';
 import { LogEntry } from './entities/logentry.entity';
 
 import { extractStocks, getTopMovers } from './helpers/modules/movers';
-import { log } from 'node:console';
+import { Etf as EtfInterface } from './typings/Etf';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { parse as csvParse } from 'csv-parse';
+import yahooFinance from 'yahoo-finance2';
+
+import { HistoryModule } from './helpers/modules/history';
+import { QuoteModule } from './helpers/modules/quote';
+import { YahooQuote } from './typings/YahooQuote';
 
 const options: LaunchOptions = {
   headless: true,
@@ -102,19 +108,130 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   constructor(
     // @InjectRepository(Index)
     private dataSource: DataSource,
+    private historyModule: HistoryModule,
+    private quoteModule: QuoteModule,
   ) {}
+
+  async getStocksFromCsv(
+    csvUrl: string,
+    mapping: SymbolMapping,
+    outputPath: string = path.join(
+      './src',
+      'output',
+      new Date().toISOString().replace(/[:.]/g, '-') + '.json',
+    ),
+  ): Promise<MarketSymbol[]> {
+    try {
+      // Fetch the CSV from GitHub
+      const response = await axios.get(csvUrl);
+      const csv = response.data;
+
+      // Parse CSV content synchronously
+      const records: any[] = parse(csv, {
+        columns: true,
+        skip_empty_lines: true,
+      });
+
+      // Map the records to the desired format
+      // skip if symbolKey is empty or contains spaces
+      const symbols: MarketSymbol[] = records
+        .filter(
+          (record) =>
+            record[mapping.symbolKey] && !/\s/.test(record[mapping.symbolKey]),
+        )
+        .map((record) => {
+          const symbol: MarketSymbol = {
+            symbol: record[mapping.symbolKey].trim(),
+            name: record[mapping.nameKey]?.trim() || '',
+          };
+          return symbol;
+        });
+
+      // write the symbols to a file ~/src/data/symbols.json
+      fs.writeFileSync(outputPath, JSON.stringify(symbols, null, 2));
+
+      return symbols;
+    } catch (err) {
+      console.error('Failed to fetch or parse CSV:', err.message);
+      return [];
+    }
+  }
+
+  async getStocksFromWikipedia(
+    url: string,
+    tableCssPath: string,
+    mapping: SymbolMapping,
+  ): Promise<MarketSymbol[]> {
+    try {
+      // this.dataSource.getRepository(LogEntry).save({
+      //   level: 'info',
+      //   message: 'Fetching data from Wikipedia: ' + url,
+      //   context: 'getStocksFromWikipedia',
+      // });
+
+      // Fetch the HTML content from the URL
+      const response = await axios.get(url);
+      const html = response.data;
+
+      // write the HTML to a file ~/src/data/wikipedia.html
+      fs.writeFileSync(path.join('./src', 'data', 'wikipedia.html'), html);
+
+      // Load the HTML into Cheerio
+      const $ = cheerio.load(html);
+
+      // Find the table using the provided CSS path
+      const table = $(tableCssPath);
+
+      // Extract headers
+      const headers: string[] = [];
+      table
+        .find('tr')
+        .first()
+        .find('th')
+        .each((i, el) => {
+          headers.push($(el).text().trim());
+        });
+
+      // Extract rows
+      const stocks: MarketSymbol[] = [];
+      table
+        .find('tr')
+        .slice(1)
+        .each((i, row) => {
+          const cells = $(row).find('td');
+          if (cells.length === headers.length) {
+            const stock: MarketSymbol = {
+              symbol: '',
+              name: '',
+            };
+            cells.each((j, cell) => {
+              // if this cell is the symbol cell, use the mapping to get the symbol
+              if (headers[j] === mapping.symbolKey) {
+                stock.symbol = $(cell).text().trim();
+              }
+              // if this cell is the name cell, use the mapping to get the name
+              if (headers[j] === mapping.nameKey) {
+                stock.name = $(cell).text().trim();
+              }
+            });
+            stocks.push(stock);
+          }
+        });
+
+      return stocks;
+    } catch (err) {
+      console.error('Failed to fetch or parse Wikipedia:', err.message);
+      return [];
+    }
+  }
 
   runCron = async (cron: Cron) => {
     // execute the task based on the cronName and methodName
     // execute the method dynamically
     const method = (this as any)[cron.method];
     if (typeof method === 'function') {
-      // Log to logger instead of console
-      this.dataSource.getRepository(LogEntry).save({
-        level: 'info',
-        message: `Running cron: ${cron.name} with method: ${cron.method}`,
-        context: 'runCron',
-      });
+      console.log(`Running cron: ${cron.name} with method: ${cron.method}`);
+
       await method.call(this);
 
       // update cron table to set the last run date
@@ -279,7 +396,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
           };
 
           // Fetch stocks from CSV
-          stocks = await getStocksFromCsv(stockConfig.sourceUrl, mapping);
+          stocks = await this.getStocksFromCsv(stockConfig.sourceUrl, mapping);
 
           break;
         }
@@ -291,7 +408,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
           };
 
           // Fetch stocks from Wikipedia
-          stocks = await getStocksFromWikipedia(
+          stocks = await this.getStocksFromWikipedia(
             stockConfig.sourceUrl,
             stockConfig.tableCssPath,
             mapping,
@@ -333,6 +450,70 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         message: `Stocks for index ${jsonIndex.yahooFinanceSymbol} saved successfully.`,
         context: 'initializeIndexStockData',
       });
+    }
+  };
+
+  initializeEtfData = async () => {
+    try {
+      const etfs: EtfInterface[] = [];
+
+      // read csv from file ~/src/data/etfs.csv line by line
+      // and do for each line:
+
+      fs.createReadStream(path.join('./src', 'data', 'etfs.csv'), {
+        encoding: 'utf-8',
+      })
+        .pipe(
+          csvParse({
+            columns: true,
+            skip_empty_lines: true,
+            trim: true,
+          }),
+        )
+        .on('data', (row: EtfInterface) => {
+          etfs.push(row);
+        })
+        .on('end', async () => {
+          // loop through each ETF and save it to the database
+          const etfRepository = this.dataSource.getRepository(Etf);
+          for (const etfData of etfs) {
+            // check if the ETF already exists in the database
+            const existingEtf = await etfRepository.findOne({
+              where: { symbol: etfData.symbol },
+            });
+
+            if (existingEtf) {
+              this.dataSource.getRepository(LogEntry).save({
+                level: 'info',
+                message: `ETF ${etfData.symbol} already exists in the database. Skipping.`,
+                context: 'initializeEtfData',
+              });
+              continue; // Skip to the next ETF if it already exists
+            }
+
+            // create a new ETF entity, same as the EtfInterface
+            let etf = new Etf();
+            etf.symbol = etfData.symbol;
+            etf.name = etfData.name;
+            etf.currency = etfData.currency;
+            etf.summary = etfData.summary;
+            etf.category_group = etfData.category_group;
+            etf.category = etfData.category;
+            etf.family = etfData.family;
+            etf.exchange = etfData.exchange;
+
+            // save the ETF to the database
+            await etfRepository.save(etf);
+          }
+        })
+        .on('error', (err) => {
+          console.error('Error reading file:', err);
+        });
+
+      return etfs;
+    } catch (err) {
+      console.error('Failed to fetch or parse CSV:', err.message);
+      return [];
     }
   };
 
@@ -392,10 +573,15 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       order: { id: 'ASC' }, // Order by id ascending
     });
 
-    // loop througheach crons and add run with setInterval and runTask
-    const cronTasks = crons.map((cron) => {
+    // use a foreach loop to iterate over the crons
+    // run them one by one and not in parallel
+    for (const cron of crons) {
+      console.log(
+        `Initializing cron job: ${cron.name} with method: ${cron.method}`,
+      );
+
       // Run the task immediately
-      this.runCron(cron);
+      await this.runCron(cron);
 
       // Set an interval to run the task every cron.interval minutes
       setInterval(
@@ -410,193 +596,33 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         cron.interval * 60 * 1000,
       ); // Convert minutes to milliseconds
 
-      // run the task once immediately
-      // this.runCron(cron);
-
-      return { id: cron.id, description: cron.name };
-    });
+      // add 2 seconds delay before setting the interval
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
   };
 
-  async getIndexQuotes(): Promise<IndexQuote[]> {
-    // declare avar to check if we need to refetch quotes
-    let refetch = false;
-
+  async getIndexQuotes(): Promise<YahooQuote[]> {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
       .createQueryBuilder('index')
       .getMany();
 
-    // get quoutes for these indexs from the db
-    // if the quote already exists, skip it
-    const existingQuotes = await this.dataSource
-      .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .where('quote.symbol IN (:...symbols)', {
-        symbols: indexes.map((index) => index.symbol),
-      })
-      .getMany();
+    // loop each index and perform a quoteCombine for each index
+    const quotes: YahooQuote[] = [];
 
-    // evaluate whether we need to refetch quotes
-    if (existingQuotes.length < indexes.length) {
-      // if the number of existing quotes is less than the number of indexes, we need to refetch quotes
-      refetch = true;
-    } else {
-      // check if any of the existing quotes are older than 5 minutes
-      const now = new Date();
-
-      // one minute ago
-      const oneMinuteAgo = new Date(now.getTime() - 1 * 60 * 1000);
-      for (const quote of existingQuotes) {
-        // choose either created or updated date, depending on which one is newer
-        const lastCreated = new Date(quote.created);
-        const lastUpdated = new Date(quote.updated);
-
-        let lastCreatedOrUpdated;
-
-        // use the last updated date if it exists, otherwise use the last created date
-        // if lastUpdated is greater than lastCreated, use lastUpdated
-        // otherwise use lastCreated
-        if (lastUpdated && lastCreated) {
-          lastCreatedOrUpdated =
-            lastUpdated > lastCreated ? lastUpdated : lastCreated;
-        } else if (lastUpdated) {
-          lastCreatedOrUpdated = lastUpdated;
-        } else {
-          lastCreatedOrUpdated = lastCreated;
-        }
-
-        // check if the last created or updated date is older than one minute
-        // if the last created or updated date is older than one minute, we need to refetch quotes
-        // console.log(`Last created or updated date for ${quote.symbol}: ${lastCreatedOrUpdated.toISOString()}`);
-        // if the last created or updated date is older than one minute, we need to refetch quotes
-        // console.log(`Last created or updated date for ${quote.symbol}: ${lastCreatedOrUpdated.toISOString()}`);
-        if (lastCreatedOrUpdated < oneMinuteAgo) {
-          refetch = true;
-
-          // log to logger instead of console
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'warn',
-            message: `Quote for index ${quote.symbol} is older than one minute. Refetching.`,
-            context: 'getIndexQuotes',
-          });
-
-          break; // No need to check further, we already know we need to refetch
-        } else {
-          // log to logger instead of console
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `Quote for index ${quote.symbol} is up to date. Skipping.`,
-            context: 'getIndexQuotes',
-          });
-        }
-      }
+    for (const index of indexes) {
+      console.log(`Fetching quote for index: ${index.symbol}`);
+      // sleep for 3 seconds to avoid hitting the API too quickly
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const quote = await this.quoteModule.quote(index.symbol);
+      console.log(`Quote for index ${index.symbol} fetched successfully.`);
+      quotes.push(quote);
     }
 
-    // if we need to refetch quotes, delete all quotes for these indexes
-    if (refetch) {
-      /*
-      await this.dataSource
-        .getRepository(Quote)
-        .createQueryBuilder('quote')
-        .delete()
-        .where('quote.symbol IN (:...symbols)', {
-          symbols: indexes.map((index) => index.symbol),
-        })
-        .execute();
-        */
-
-      this.dataSource.getRepository(LogEntry).save({
-        level: 'info',
-        message:
-          'Refetching quotes for indexes: ' + indexes.map((i) => i.symbol),
-        context: 'getIndexQuotes',
-      });
-
-      // perform a quoteCombine for each index
-      await Promise.all(
-        indexes.map(async (index) => {
-          let result;
-          try {
-            result = await yahooFinance.quoteCombine(index.symbol);
-          } catch (error) {
-            this.dataSource.getRepository(LogEntry).save({
-              level: 'error',
-              message: `Failed to fetch quote for index ${index.symbol}: ${error.message || error}`,
-              context: 'getIndexQuotes',
-            });
-            return; // Continue to next index
-          }
-
-          // set variable to inidicate if record was created or updated
-          let recordCreated = false;
-
-          // update quote table by symbol
-          // check if the quote already exists
-          const existingQuote = await this.dataSource
-            .getRepository(Quote)
-            .findOne({
-              where: { symbol: index.symbol },
-            });
-
-          const now = new Date();
-
-          if (existingQuote) {
-            // update the existing quote
-            existingQuote.json = result;
-            existingQuote.updated = now.getTime();
-            existingQuote.updatedAt = now.toISOString(); // format date as YYYY-MM-DD
-            await this.dataSource.getRepository(Quote).save(existingQuote);
-            recordCreated = false; // Indicate that the record was updated
-          } else {
-            // create a new quote
-            const quote = new Quote();
-            quote.symbol = index.symbol;
-            quote.json = result;
-            quote.created = now.getTime();
-            await this.dataSource.getRepository(Quote).save(quote);
-            recordCreated = true; // Indicate that the record was created
-          }
-
-          // log the result
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `Quote for index ${index.symbol} ${
-              recordCreated ? 'created' : 'updated'
-            } successfully.`,
-            context: 'getIndexQuotes',
-          });
-        }),
-      );
-    }
-
-    //  get quotes for these indexes from the db
-    const quotes = await this.dataSource
-      .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .where('quote.symbol IN (:...symbols)', {
-        symbols: indexes.map((index) => index.symbol),
-      })
-      .getMany();
-
-    // return only the json field of the quotes
-    const returnObject = quotes.map((quote) => {
-      return {
-        symbol: quote.symbol,
-        quote: quote.json,
-      };
-    });
-
-    return returnObject;
+    return quotes;
   }
 
-  // create a function that populate the history table of the index symbols
-  // timeAgo data to be fetch must be 1.5 years
-  // first fetch indexes from the database, and use their symbols to fetch the history from Yahoo Finance
-  // before fetching, make sure there is at least 252 + 21 days of history for each index symbol
-  // also make sure that the created date of the historic is not today
-  // otherwise refetch the history
-  // save the fetched history to the database
   async getIndexHistory(): Promise<void> {
     // get all indexes from the database
     const indexes = await this.dataSource
@@ -606,103 +632,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     // loop through each index and fetch the history from the history table
     for (const index of indexes) {
-      // check if the index has any history
-      const existingHistory = await this.dataSource
-        .getRepository(History)
-        .createQueryBuilder('history')
-        .where('history.symbol = :symbol', { symbol: index.symbol })
-        .getMany();
-
-      // print number of existing history records
-      this.dataSource.getRepository(LogEntry).save({
-        level: 'info',
-        message: `Index ${index.symbol} has ${existingHistory.length} history records.`,
-        context: 'getIndexHistory',
-      });
-
-      // if the index has history, check if it has at least 252 + 21 days of history
-      // and that the created date is today, otherwise refetch the history
-      if (existingHistory.length > 0) {
-        const lastCreated = new Date(
-          existingHistory[existingHistory.length - 1].created,
-        );
-
-        // print
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `Last created date for index ${index.symbol} is ${lastCreated.toISOString()}.`,
-          context: 'getIndexHistory',
-        });
-
-        const today = new Date();
-        const daysDifference = Math.floor(
-          (today.getTime() - lastCreated.getTime()) / (1000 * 60 * 60 * 24),
-        );
-
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `Days difference for index ${index.symbol} is ${daysDifference}.`,
-          context: 'getIndexHistory',
-        });
-
-        // print lastCreated.toDateString() and  today.toDateString()
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `Last created date: ${lastCreated.toDateString()}, Today: ${today.toDateString()}`,
-          context: 'getIndexHistory',
-        });
-
-        // if the last created date is today, skip fetching history
-        if (
-          daysDifference < 252 + 21 &&
-          lastCreated.toDateString() === today.toDateString()
-        ) {
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `Index ${index.symbol} already has enough history. Skipping.`,
-            context: 'getIndexHistory',
-          });
-          continue;
-        }
-      }
-
-      // fetch the history from Yahoo Finance
-      this.dataSource.getRepository(LogEntry).save({
-        level: 'info',
-        message: `Fetching history for index: ${index.symbol}`,
-        context: 'getIndexHistory',
-      });
-
-      const result = await yahooFinance.historical(index.symbol, {
-        period1: new Date(Date.now() - (252 + 21) * 24 * 60 * 60 * 1000), // 1.5 years ago
-        interval: '1d',
-      });
-
-      // first delete all existing history for this index
-      await this.dataSource
-        .getRepository(History)
-        .createQueryBuilder('history')
-        .delete()
-        .where('history.symbol = :symbol', { symbol: index.symbol })
-        .execute();
-
-      // save the history to the database, one by one
-      const historyRepository = this.dataSource.getRepository(History);
-      for (const item of result) {
-        const history = new History();
-        history.symbol = index.symbol;
-        history.date = new Date(item.date).getTime();
-        history.dateString = item.date.toISOString(); // format date as YYYY-MM-DD
-        history.open = item.open;
-        history.high = item.high;
-        history.low = item.low;
-        history.close = item.close;
-        history.volume = item.volume;
-        history.adjClose = item.adjClose;
-        history.created = new Date().getTime();
-
-        await historyRepository.save(history);
-      }
+      await this.historyModule.history(index.symbol);
     }
   }
 
@@ -852,7 +782,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       // if there are existing news, skip fetching them
       // also check if the created date is not older than 4 hours, otherwise refetch the news
       if (existingNews) {
-        const lastCreated = new Date(existingNews.created);
+        const lastCreated = new Date(); // new Date(existingNews.created);
         const now = new Date();
         const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
 
@@ -888,6 +818,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
           context: 'getIndexNews',
         });
 
+        console.log(`Fetching news for index: ${index.symbol}`);
         const result = await yahooFinance.search(index.symbol);
 
         // first delete all existing news for this index
@@ -939,9 +870,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.browser = await chromium.launch(options);
 
-    // await this.initializeSettingsData();
     await this.initializeIndexData();
     await this.initializeIndexStockData();
+    await this.initializeEtfData();
 
     await this.initializeCronJobs();
   }
@@ -952,134 +883,3 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 }
-
-async function getStocksFromCsv(
-  csvUrl: string,
-  mapping: SymbolMapping,
-  outputPath: string = path.join(
-    './src',
-    'output',
-    new Date().toISOString().replace(/[:.]/g, '-') + '.json',
-  ),
-): Promise<MarketSymbol[]> {
-  try {
-    // Fetch the CSV from GitHub
-    const response = await axios.get(csvUrl);
-    const csv = response.data;
-
-    // Parse CSV content synchronously
-    const records: any[] = parse(csv, {
-      columns: true,
-      skip_empty_lines: true,
-    });
-
-    // Map the records to the desired format
-    // skip if symbolKey is empty or contains spaces
-    const symbols: MarketSymbol[] = records
-      .filter(
-        (record) =>
-          record[mapping.symbolKey] && !/\s/.test(record[mapping.symbolKey]),
-      )
-      .map((record) => {
-        const symbol: MarketSymbol = {
-          symbol: record[mapping.symbolKey].trim(),
-          name: record[mapping.nameKey]?.trim() || '',
-        };
-        return symbol;
-      });
-
-    // write the symbols to a file ~/src/data/symbols.json
-    fs.writeFileSync(outputPath, JSON.stringify(symbols, null, 2));
-
-    return symbols;
-  } catch (err) {
-    console.error('Failed to fetch or parse CSV:', err.message);
-    return [];
-  }
-}
-
-async function getStocksFromWikipedia(
-  url: string,
-  tableCssPath: string,
-  mapping: SymbolMapping,
-): Promise<MarketSymbol[]> {
-  try {
-    // this.dataSource.getRepository(LogEntry).save({
-    //   level: 'info',
-    //   message: 'Fetching data from Wikipedia: ' + url,
-    //   context: 'getStocksFromWikipedia',
-    // });
-
-    // Fetch the HTML content from the URL
-    const response = await axios.get(url);
-    const html = response.data;
-
-    // write the HTML to a file ~/src/data/wikipedia.html
-    fs.writeFileSync(path.join('./src', 'data', 'wikipedia.html'), html);
-
-    // Load the HTML into Cheerio
-    const $ = cheerio.load(html);
-
-    // Find the table using the provided CSS path
-    const table = $(tableCssPath);
-
-    // Extract headers
-    const headers: string[] = [];
-    table
-      .find('tr')
-      .first()
-      .find('th')
-      .each((i, el) => {
-        headers.push($(el).text().trim());
-      });
-
-    // Extract rows
-    const stocks: MarketSymbol[] = [];
-    table
-      .find('tr')
-      .slice(1)
-      .each((i, row) => {
-        const cells = $(row).find('td');
-        if (cells.length === headers.length) {
-          const stock: MarketSymbol = {
-            symbol: '',
-            name: '',
-          };
-          cells.each((j, cell) => {
-            // if this cell is the symbol cell, use the mapping to get the symbol
-            if (headers[j] === mapping.symbolKey) {
-              stock.symbol = $(cell).text().trim();
-            }
-            // if this cell is the name cell, use the mapping to get the name
-            if (headers[j] === mapping.nameKey) {
-              stock.name = $(cell).text().trim();
-            }
-          });
-          console.log(`Extracted stock: ${stock.symbol} - ${stock.name}`);
-          stocks.push(stock);
-        }
-      });
-
-    //this.dataSource.getRepository(LogEntry).save({
-    //  level: 'info',
-    //  message: `Found ${stocks.length} stocks in the table.`,
-    //  context: 'getStocksFromWikipedia',
-    //});
-
-    return stocks;
-  } catch (err) {
-    console.error('Failed to fetch or parse Wikipedia:', err.message);
-    return [];
-  }
-}
-
-/*
-
- Todo:
- - update the updated/created date of the stocks when fetching them
- - if the interval or enabled properties of the cron are changed, kill the existing interval and create a new one
- - getDashboard (Finish this)
- - getForecast (Finish this)
- - Update website to use the new API endpoints
-
-*/

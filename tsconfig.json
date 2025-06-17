@@ -17,5 +17,16 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "tests",
+    "**/*.spec.ts",
+    "**/*.sqlite",
+    "data.db",
+    "data.db-journal",
+    "**/*.html"
+  ]
 }

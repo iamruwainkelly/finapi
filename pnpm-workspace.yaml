@@ -5,4 +5,5 @@ onlyBuiltDependencies:
   - '@tensorflow/tfjs-node'
   - better-sqlite3
   - core-js
+  - esbuild
   - sqlite3

@@ -3,6 +3,21 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "watchAssets": true,
+    "assets": [
+      {
+        "include": "src/**/*.json"
+      }
+    ],
+    "watchIgnore": [
+      "**/*.ignore",
+      "**/.git/**",
+      "**/node_modules/**",
+      "**/data.db",
+      "**/data.db-wal",
+      "**/data.db-shm",
+      "**/data.db-journal"
+    ]
   }
 }

@@ -1,12 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  BeforeInsert,
-  BeforeUpdate,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
 
 @Entity()
 export class Quote {
@@ -25,19 +17,12 @@ export class Quote {
 
   // store the string date in ISO format
   @Column({ nullable: true })
-  createdAt: string;
+  createdString: string;
 
   // upatedAt is automatically managed by TypeORM
   @Column({ nullable: true })
   updated: number;
 
   @Column({ nullable: true })
-  updatedAt: string;
-
-  @BeforeInsert()
-  setCreatedAt() {
-    if (this.created && !this.createdAt) {
-      this.createdAt = new Date(this.created).toISOString();
-    }
-  }
+  updatedString: string;
 }

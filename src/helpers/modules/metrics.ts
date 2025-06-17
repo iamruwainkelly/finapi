@@ -1,4 +1,4 @@
-import yahooFinance from 'yahoo-finance2';
+import { HistoryModule } from '../../helpers/modules/history';
 
 // Utility: compute standard deviation of an array
 function standardDeviation(arr: number[]): number {
@@ -92,23 +92,12 @@ function getRecommendationLabel(sentiment: string, confidence: number): string {
   return 'Hold';
 }
 
-function hasSufficientData(history: any[], minDays = 250): boolean {
-  return history && history.length >= minDays;
-}
-
 export async function getMetrics(ticker: string): Promise<any> {
-  const end = new Date();
-  const start = new Date();
-  start.setFullYear(end.getFullYear() - 2);
-  const historical = await yahooFinance.historical(ticker, {
-    period1: start.toISOString().slice(0, 10),
-    period2: end.toISOString().slice(0, 10),
-    interval: '1d',
-  });
-  if (!historical || historical.length === 0) {
-    throw new Error(`No data for ${ticker}`);
-  }
-  const closes = historical
+  // history module ts
+  const historyModule = new HistoryModule();
+  const history = await historyModule.history(ticker);
+
+  const closes = history
     .map((day: any) => day.close)
     .filter((p: number) => p != null);
   const data3m = tail(closes, 63);

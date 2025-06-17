@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { HistoryModule } from './helpers/modules/history';
+import { QuoteModule } from './helpers/modules/quote';
 
 @Module({
   imports: [
@@ -15,24 +17,26 @@ import { DataSource } from 'typeorm';
     }),
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
-      database: 'data.db',
+      database: './src/data/data.db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, HistoryModule, QuoteModule],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {
-    /*
-    this.dataSource
-      .initialize()
-      .then(() => {
-        console.log('Data Source has been initialized!');
-      })
-      .catch((err) => {
-        console.error('Error during Data Source initialization', err);
-      });*/
+    // Initialize the data source if not already initialized
+    if (!this.dataSource.isInitialized) {
+      this.dataSource
+        .initialize()
+        .then(() => {
+          console.log('Data Source has been initialized!');
+        })
+        .catch((err) => {
+          console.error('Error during Data Source initialization', err);
+        });
+    }
   }
 }

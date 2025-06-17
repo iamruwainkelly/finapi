@@ -1,55 +1,48 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  BeforeInsert,
-} from 'typeorm';
+import { PrimaryGeneratedColumn, Column, BeforeInsert, Entity } from 'typeorm';
 
 @Entity('history')
 export class History {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar' })
   symbol: string;
 
-  @Column()
-  dateString: string;
-
-  @Column()
+  @Column({ type: 'bigint' })
   date: number;
 
-  @Column({ type: 'float' })
-  high: number;
-
-  @Column({ type: 'bigint' })
-  volume: number;
-
-  @Column({ type: 'float' })
-  open: number;
-
-  @Column({ type: 'float' })
-  low: number;
-
-  @Column({ type: 'float' })
-  close: number;
+  @Column({ type: 'varchar' })
+  dateString: string;
 
   @Column({ type: 'float', nullable: true })
-  adjClose: number | undefined;
+  high: number | null | undefined;
 
-  @Column({ nullable: true })
+  @Column({ type: 'bigint', nullable: true })
+  volume: number | null | undefined;
+
+  @Column({ type: 'float', nullable: true })
+  open: number | null | undefined;
+
+  @Column({ type: 'float', nullable: true })
+  low: number | null | undefined;
+
+  @Column({ type: 'float', nullable: true })
+  close: number | null | undefined;
+
+  @Column({ type: 'float', nullable: true })
+  adjclose: number | null | undefined;
+
+  @Column({ type: 'bigint' })
   created: number;
 
   // store the string date in ISO format
-  @Column({ nullable: true })
-  createdAt: string;
+  @Column({ type: 'varchar', nullable: true })
+  createdString: string;
 
   @BeforeInsert()
-  setCreatedAt() {
-    if (this.created && !this.createdAt) {
-      this.createdAt = new Date(this.created).toISOString();
+  setCreatedString() {
+    if (this.created && !this.createdString) {
+      this.createdString = new Date(this.created).toISOString();
     }
   }
 }

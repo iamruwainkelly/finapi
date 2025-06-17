@@ -1,5 +1,5 @@
 export interface YahooHistoric {
-  adjClose?: number | undefined;
+  adjclose?: number | undefined;
   date: Date;
   open: number;
   high: number;
