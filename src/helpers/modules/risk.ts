@@ -166,3 +166,59 @@ const analysis = async (index: string, stock: string): Promise<any> => {
     exposure_percent,
   };
 };
+
+/**
+ * Calculate risk metrics for a series of returns.
+ * @param returns Array of portfolio/asset returns
+ * @param benchmarkReturns Optional: Array of benchmark returns for correlation
+ */
+export function metrics(
+  returns: number[],
+  benchmarkReturns?: number[],
+): {
+  correlation: number | null;
+  valueAtRisk: number;
+  expectedShortFall: number;
+  maxDrawDown: number;
+} {
+  // Correlation
+  let correlation: number | null = null;
+  if (benchmarkReturns && benchmarkReturns.length === returns.length) {
+    correlation = ss.sampleCorrelation(returns, benchmarkReturns);
+  }
+
+  // Value at Risk (VaR) at 95% confidence (historical method)
+  const sorted = [...returns].sort((a, b) => a - b);
+  const varIndex = Math.floor(0.05 * sorted.length);
+  const valueAtRisk = Math.abs(sorted[varIndex]);
+
+  // Expected Shortfall (ES) at 95% confidence
+  const losses = sorted.slice(0, varIndex + 1);
+  const expectedShortFall = Math.abs(
+    losses.reduce((a, b) => a + b, 0) / losses.length,
+  );
+
+  // Max Drawdown
+  let maxDrawDown = 0;
+  let peak = returns[0];
+  let trough = returns[0];
+  let mdd = 0;
+  let runningMax = returns[0];
+  for (let i = 1; i < returns.length; i++) {
+    runningMax = Math.max(runningMax, returns[i]);
+    mdd = (returns[i] - runningMax) / runningMax;
+    if (mdd < maxDrawDown) {
+      maxDrawDown = mdd;
+      trough = returns[i];
+      peak = runningMax;
+    }
+  }
+  maxDrawDown = Math.abs(maxDrawDown);
+
+  return {
+    correlation,
+    valueAtRisk,
+    expectedShortFall,
+    maxDrawDown,
+  };
+}
