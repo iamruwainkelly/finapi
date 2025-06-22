@@ -1,44 +1,44 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
-import { AppService } from './app.service';
-import yahooFinance from 'yahoo-finance2';
-import { chromium, LaunchOptions } from 'playwright';
-import * as cheerio from 'cheerio';
-import * as fs from 'node:fs';
-import { ApiExcludeEndpoint } from '@nestjs/swagger';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Controller, Get, Param, Query, UseInterceptors } from "@nestjs/common";
+import { AppService } from "./app.service";
+import yahooFinance from "yahoo-finance2";
+import { chromium, LaunchOptions } from "playwright";
+import * as cheerio from "cheerio";
+import * as fs from "node:fs";
+import { ApiExcludeEndpoint } from "@nestjs/swagger";
+import { CacheInterceptor, CacheTTL } from "@nestjs/cache-manager";
 
 // entities
-import { Quote as QuoteEntity } from './entities/quote.entity';
+import { Quote as QuoteEntity } from "./entities/quote.entity";
 // history
-import { History } from './entities/history.entity';
+import { History } from "./entities/history.entity";
 // indexes
-import { Index } from './entities/index.entity';
-import { LogEntry } from './entities/logentry.entity';
+import { Index } from "./entities/index.entity";
+import { LogEntry } from "./entities/logentry.entity";
 
-import { CustomRepositoryNotFoundError, DataSource } from 'typeorm';
-import { PerformanceDays } from './typings/PerformanceDats';
+import { CustomRepositoryNotFoundError, DataSource } from "typeorm";
+import { PerformanceDays } from "./typings/PerformanceDats";
 import {
   ChangeAndChangePercent,
   SymbolPerformance,
-} from './typings/IndexPerformance';
-import { Quote } from './typings/Quote';
+} from "./typings/IndexPerformance";
+import { Quote } from "./typings/Quote";
 
 // prediction
-import * as prediction from './helpers/modules/prediction.js';
-import { YahooHistoric } from './typings/YahooHistoric';
-import { MarketMover } from './entities/marketMover.entity';
-import { News } from './entities/news.entity';
-import { Stock } from './entities/stock.entity';
+import * as prediction from "./helpers/modules/prediction.js";
+import { YahooHistoric } from "./typings/YahooHistoric";
+import { MarketMover } from "./entities/marketMover.entity";
+import { News } from "./entities/news.entity";
+import { Stock } from "./entities/stock.entity";
 
 // import metrics.ts
-import { computeMetrics, getMetrics } from './helpers/modules/metrics';
-import { Metrics } from './typings/Metrics';
-import { QuoteSummaryResult } from 'yahoo-finance2/dist/esm/src/modules/quoteSummary-iface';
-import { Etf } from './entities/etf.entity';
-import { YahooQuote } from './typings/YahooQuote';
+import { computeMetrics, getMetrics } from "./helpers/modules/metrics";
+import { Metrics } from "./typings/Metrics";
+import { QuoteSummaryResult } from "yahoo-finance2/dist/esm/src/modules/quoteSummary-iface";
+import { Etf } from "./entities/etf.entity";
+import { YahooQuote } from "./typings/YahooQuote";
 
-import { HistoryModule } from './helpers/modules/history';
-import { QuoteModule } from './helpers/modules/quote';
+import { HistoryModule } from "./helpers/modules/history";
+import { QuoteModule } from "./helpers/modules/quote";
 
 interface PeerResult {
   symbol: string;
@@ -58,24 +58,24 @@ const calculateChange = (currentPrice: number, previousPrice: number) => {
 
 const indexes = [
   {
-    yahooFinanceSymbol: '^GSPC',
-    investingSymbol: 'SPX',
-    investingUrlName: 'us-spx-500',
+    yahooFinanceSymbol: "^GSPC",
+    investingSymbol: "SPX",
+    investingUrlName: "us-spx-500",
   },
   {
-    yahooFinanceSymbol: '^IXIC',
-    investingSymbol: 'IXIC',
-    investingUrlName: 'nasdaq-composite',
+    yahooFinanceSymbol: "^IXIC",
+    investingSymbol: "IXIC",
+    investingUrlName: "nasdaq-composite",
   },
   {
-    yahooFinanceSymbol: '^STOXX50E',
-    investingSymbol: 'STOXX50E',
-    investingUrlName: 'eu-stoxx50',
+    yahooFinanceSymbol: "^STOXX50E",
+    investingSymbol: "STOXX50E",
+    investingUrlName: "eu-stoxx50",
   },
   {
-    yahooFinanceSymbol: '^SSMI',
-    investingSymbol: 'SMI',
-    investingUrlName: 'switzerland-20',
+    yahooFinanceSymbol: "^SSMI",
+    investingSymbol: "SMI",
+    investingUrlName: "switzerland-20",
   },
 ];
 
@@ -85,20 +85,20 @@ const options: LaunchOptions = {
   slowMo: 100,
   // set some args to make playwright behave more like a real browser
   args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process',
-    '--allow-insecure-localhost',
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-web-security",
+    "--disable-features=IsolateOrigins,site-per-process",
+    "--allow-insecure-localhost",
   ],
-  ignoreDefaultArgs: ['--enable-automation'],
+  ignoreDefaultArgs: ["--enable-automation"],
 };
 
 // create an array of user agents
 const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
 ];
 
 const contextOptions = {
@@ -107,7 +107,7 @@ const contextOptions = {
   deviceScaleFactor: 1,
 };
 
-@Controller('api/')
+@Controller("api/")
 export class AppController {
   constructor(
     private readonly appService: AppService,
@@ -245,11 +245,11 @@ export class AppController {
       // print the first and last entry in the historical data
       const firstEntry = historical[0];
       const firstDate = new Date(firstEntry.date);
-      const firstDateString = firstDate.toISOString().split('T')[0];
+      const firstDateString = firstDate.toISOString().split("T")[0];
 
       const lastEntry = historical[historical.length - 1];
       const lastDate = new Date(lastEntry.date);
-      const lastDateString = lastDate.toISOString().split('T')[0];
+      const lastDateString = lastDate.toISOString().split("T")[0];
 
       const startPrice = firstEntry.close;
       const latestPrice = lastEntry.close;
@@ -260,8 +260,9 @@ export class AppController {
       }
 
       const ytdChange = latestPrice - startPrice;
-      const ytdChangePercent =
-        startPrice !== 0 ? (ytdChange / startPrice) * 100 : 0;
+      const ytdChangePercent = startPrice !== 0
+        ? (ytdChange / startPrice) * 100
+        : 0;
 
       return {
         ticker,
@@ -280,9 +281,9 @@ export class AppController {
     // get history from the database, where symbol is the same as params.symbol
     const history = await this.dataSource
       .getRepository(History)
-      .createQueryBuilder('history')
-      .where('history.symbol = :symbol', { symbol: symbol })
-      .orderBy('history.date', 'ASC')
+      .createQueryBuilder("history")
+      .where("history.symbol = :symbol", { symbol: symbol })
+      .orderBy("history.date", "ASC")
       .getMany();
 
     // Sort history by date in ascending order
@@ -311,7 +312,7 @@ export class AppController {
 
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(60 * 60 * 24)
-  @Get('getPrediction/:symbol')
+  @Get("getPrediction/:symbol")
   async getPrediction(@Param() params: any): Promise<object> {
     const p = await prediction.predict(params.symbol);
     return {
@@ -320,19 +321,18 @@ export class AppController {
     };
   }
 
-  @Get('forecast/:index/:stock')
+  @Get("forecast/:symbol")
   async forecast(
-    @Param('index') index: string,
-    @Param('stock') stock: string,
+    @Param("symbol") symbol: string,
   ): Promise<object> {
     // get quote for the stock
-    const quote = await this.quote(stock);
-    const quoteSummary = await this.quoteSummary(stock);
+    const quote = await this.quote(symbol);
+    const quoteSummary = await this.quoteSummary(symbol);
 
     // get metrics for the stock
-    const metrics: Metrics = await getMetrics(stock);
+    const metrics: Metrics = await getMetrics(symbol);
     // get historic data for the stock
-    const history = await this.history(stock);
+    const history = await this.history(symbol);
 
     const peRatio = quoteSummary.summaryDetail?.trailingPE;
     const pbRatio = quoteSummary.defaultKeyStatistics?.priceToBook;
@@ -346,7 +346,7 @@ export class AppController {
       evToEbitda = ev / ebitda;
     }
 
-    let ytdReturn = await this.calculateYTD(stock);
+    let ytdReturn = await this.calculateYTD(symbol);
 
     const beta = quoteSummary.defaultKeyStatistics?.beta;
 
@@ -362,14 +362,13 @@ export class AppController {
       .map((price, i) => Math.log((price ?? 1) / (closes[i] ?? 1)));
     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
     const squaredDiffs = returns.map((r) => Math.pow(r - mean, 2));
-    const variance =
-      squaredDiffs.reduce((a, b) => a + b, 0) / squaredDiffs.length;
+    const variance = squaredDiffs.reduce((a, b) => a + b, 0) /
+      squaredDiffs.length;
     const stdDev = Math.sqrt(variance);
     const volatility30d = stdDev * Math.sqrt(252) * 100;
 
     const currentVolume = quoteSummary.price?.regularMarketVolume;
-    const averageVolume =
-      quoteSummary.summaryDetail?.averageVolume ||
+    const averageVolume = quoteSummary.summaryDetail?.averageVolume ||
       quoteSummary.summaryDetail?.averageDailyVolume10Day;
 
     const rsi14 = this.calculateRSI(history, 14);
@@ -382,7 +381,7 @@ export class AppController {
       // confidenceLevelText: 'High Confidence',
       // sentiment: 'Strong Buy',
       recentPerformance: 3.42, // get for quote
-      recentPerformanceDirection: 'Up', // get for quote
+      recentPerformanceDirection: "Up", // get for quote
       current: 181.54,
       // target: 191.07,
       // potential: 5.25,
@@ -398,10 +397,10 @@ export class AppController {
       performance: {
         ytdReturn: ytdReturn,
         beta: beta,
-        fiftyTwoWeekRangeLow:
-          quoteSummary.summaryDetail?.fiftyTwoWeekLow ?? null,
-        fiftyTwoWeekRangeHigh:
-          quoteSummary.summaryDetail?.fiftyTwoWeekHigh ?? null,
+        fiftyTwoWeekRangeLow: quoteSummary.summaryDetail?.fiftyTwoWeekLow ??
+          null,
+        fiftyTwoWeekRangeHigh: quoteSummary.summaryDetail?.fiftyTwoWeekHigh ??
+          null,
         volatility30d: volatility30d,
       },
       currentVolume: currentVolume,
@@ -410,53 +409,53 @@ export class AppController {
       rsi14: rsi14,
       riskFactorExposures: [
         {
-          name: 'Market',
+          name: "Market",
           value: 65,
         },
         {
-          name: 'Size',
+          name: "Size",
           value: 12,
         },
         {
-          name: 'Value',
+          name: "Value",
           value: 8,
         },
         {
-          name: 'Momentum',
+          name: "Momentum",
           value: 25,
         },
         {
-          name: 'Quality',
+          name: "Quality",
           value: 5,
         },
         {
-          name: 'Volatility',
+          name: "Volatility",
           value: 18,
         },
       ],
       riskFactorContribution: [
         {
-          name: 'Market',
+          name: "Market",
           value: 65,
         },
         {
-          name: 'Size',
+          name: "Size",
           value: 12,
         },
         {
-          name: 'Value',
+          name: "Value",
           value: 8,
         },
         {
-          name: 'Momentum',
+          name: "Momentum",
           value: 25,
         },
         {
-          name: 'Quality',
+          name: "Quality",
           value: 5,
         },
         {
-          name: 'Volatility',
+          name: "Volatility",
           value: 18,
         },
       ],
@@ -472,10 +471,9 @@ export class AppController {
     return results;
   }
 
-  @Get('quote/:symbol')
-  async quote(@Param('symbol') symbol: string): Promise<YahooQuote> {
+  @Get("quote/:symbol")
+  async quote(@Param("symbol") symbol: string): Promise<YahooQuote> {
     console.log(`Fetching .quote for ${symbol}...`);
-
     return this.quoteModule.quote(symbol);
   }
 
@@ -483,46 +481,46 @@ export class AppController {
   // 1d, 5d, 1mo, 3mo, 6mo, 1y, 3yr, 5yr
   // use setX methods to set the hours, minutes, seconds and milliseconds to 0
   private getPastDate(
-    timeframe: '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '3yr' | '5yr',
+    timeframe: "1d" | "5d" | "1mo" | "3mo" | "6mo" | "1y" | "3yr" | "5yr",
   ): Date {
     let date = new Date();
     date.setHours(0, 0, 0, 0);
 
     switch (timeframe) {
-      case '1d':
+      case "1d":
         date.setDate(date.getDate() - 1);
         break;
-      case '5d':
+      case "5d":
         date.setDate(date.getDate() - 5);
         break;
-      case '1mo':
+      case "1mo":
         date.setMonth(date.getMonth() - 1);
         break;
-      case '3mo':
+      case "3mo":
         date.setMonth(date.getMonth() - 3);
         break;
-      case '6mo':
+      case "6mo":
         date.setMonth(date.getMonth() - 6);
         break;
-      case '1y':
+      case "1y":
         date.setFullYear(date.getFullYear() - 1);
         break;
-      case '3yr':
+      case "3yr":
         date.setFullYear(date.getFullYear() - 3);
         break;
-      case '5yr':
+      case "5yr":
         date.setFullYear(date.getFullYear() - 5);
         break;
       default:
-        throw new Error('Invalid timeframe');
+        throw new Error("Invalid timeframe");
     }
 
     return date;
   }
 
-  @Get('performance/:symbol')
+  @Get("performance/:symbol")
   async performance(
-    @Param('symbol') symbol: string,
+    @Param("symbol") symbol: string,
   ): Promise<SymbolPerformance> {
     // get history from the database, where symbol is the same as symbol param
     const history = await this.history(symbol);
@@ -530,39 +528,39 @@ export class AppController {
     // create object array for different time periods
     const timeframes = [
       {
-        name: '5d',
-        jsonName: 'fiveDays',
+        name: "5d",
+        jsonName: "fiveDays",
         startDay: new Date(history[history.length - 5]?.date ?? Date.now()),
       },
       {
-        name: '1mo',
-        jsonName: 'oneMonth',
-        startDay: this.getPastDate('1mo'),
+        name: "1mo",
+        jsonName: "oneMonth",
+        startDay: this.getPastDate("1mo"),
       },
       {
-        name: '3mo',
-        jsonName: 'threeMonths',
-        startDay: this.getPastDate('3mo'),
+        name: "3mo",
+        jsonName: "threeMonths",
+        startDay: this.getPastDate("3mo"),
       },
       {
-        name: '6mo',
-        jsonName: 'sixMonths',
-        startDay: this.getPastDate('6mo'),
+        name: "6mo",
+        jsonName: "sixMonths",
+        startDay: this.getPastDate("6mo"),
       },
       {
-        name: '1y',
-        jsonName: 'oneYear',
-        startDay: this.getPastDate('1y'),
+        name: "1y",
+        jsonName: "oneYear",
+        startDay: this.getPastDate("1y"),
       },
       {
-        name: '3yr',
-        jsonName: 'threeYears',
-        startDay: this.getPastDate('3yr'),
+        name: "3yr",
+        jsonName: "threeYears",
+        startDay: this.getPastDate("3yr"),
       },
       {
-        name: '5yr',
-        jsonName: 'fiveYears',
-        startDay: this.getPastDate('5yr'),
+        name: "5yr",
+        jsonName: "fiveYears",
+        startDay: this.getPastDate("5yr"),
       },
     ];
 
@@ -591,13 +589,13 @@ export class AppController {
       symbol: symbol.toUpperCase(),
       performance: {
         oneDay: oneDay,
-        fiveDays: performanceData.find((d) => d.period === '5d')?.data,
-        oneMonth: performanceData.find((d) => d.period === '1mo')?.data,
-        threeMonths: performanceData.find((d) => d.period === '3mo')?.data,
-        sixMonths: performanceData.find((d) => d.period === '6mo')?.data,
-        oneYear: performanceData.find((d) => d.period === '1y')?.data,
-        threeYears: performanceData.find((d) => d.period === '3yr')?.data,
-        fiveYears: performanceData.find((d) => d.period === '5yr')?.data,
+        fiveDays: performanceData.find((d) => d.period === "5d")?.data,
+        oneMonth: performanceData.find((d) => d.period === "1mo")?.data,
+        threeMonths: performanceData.find((d) => d.period === "3mo")?.data,
+        sixMonths: performanceData.find((d) => d.period === "6mo")?.data,
+        oneYear: performanceData.find((d) => d.period === "1y")?.data,
+        threeYears: performanceData.find((d) => d.period === "3yr")?.data,
+        fiveYears: performanceData.find((d) => d.period === "5yr")?.data,
         yearToDate: {
           change: ytdData ? ytdData.ytdChange : undefined,
           changePercent: ytdData ? ytdData.ytdChangePercent : undefined,
@@ -607,14 +605,14 @@ export class AppController {
   }
 
   // quoteSummary
-  @Get('quote-summary/:symbol')
+  @Get("quote-summary/:symbol")
   async quoteSummary(@Param() symbol: string): Promise<QuoteSummaryResult> {
     const results = await yahooFinance.quoteSummary(symbol, {
       modules: [
-        'defaultKeyStatistics',
-        'financialData',
-        'summaryDetail',
-        'price',
+        "defaultKeyStatistics",
+        "financialData",
+        "summaryDetail",
+        "price",
       ],
     });
 
@@ -622,14 +620,14 @@ export class AppController {
   }
 
   @UseInterceptors(CacheInterceptor)
-  @Get('news/:symbol')
-  async news(@Param('symbol') symbol: string): Promise<object> {
+  @Get("news/:symbol")
+  async news(@Param("symbol") symbol: string): Promise<object> {
     // get news from the database, where symbol is the same as params.symbol
     // get one record from the database, where symbol is the same as params.symbol
     const news = await this.dataSource
       .getRepository(News)
-      .createQueryBuilder('news')
-      .where('news.symbol = :symbol', { symbol: symbol })
+      .createQueryBuilder("news")
+      .where("news.symbol = :symbol", { symbol: symbol })
       .getOne();
 
     // if the news exists, return it
@@ -645,115 +643,23 @@ export class AppController {
     };
   }
 
-  @Get('market-movers-1/:index')
-  async marketwatch(@Param() params: any): Promise<object> {
-    // throw an error if they did not prefix the index with ^
-    if (!params.index.startsWith('^')) {
-      return {
-        error:
-          'Index should be prefixed with ^. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
-      };
-    }
-
-    //get the index from the indexes array
-    const index = indexes.find(
-      (index) => index.yahooFinanceSymbol === params.index.toUpperCase(),
-    );
-
-    if (!index) {
-      return {
-        error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
-      };
-    }
-
-    const url = `https://za.investing.com/indices/${index.investingUrlName}`;
-
-    const browser = await chromium.launch(options);
-
-    const context = await browser.newContext(contextOptions);
-
-    const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    const content = await page.content();
-    await browser.close();
-
-    const $ = cheerio.load(content);
-
-    // Extract "Top Gainers" data
-    const gainersTable = $('[data-test="gainers-table"] tbody tr');
-    const gainers = gainersTable
-      .map((_, row) => {
-        const cells = $(row).find('td');
-        return {
-          name: $(cells[0])
-            .find('[data-test="gainers-losers-label"]')
-            .text()
-            .trim(),
-          symbol: $(cells[0]).find('span.font-semibold').text().trim(),
-          price: $(cells[1])
-            .find('[data-test="gainers-losers-last"]')
-            .text()
-            .trim(),
-          change: $(cells[1])
-            .find('[data-test="gainers-losers-change"] span.font-normal')
-            .text()
-            .trim(),
-          changePercent: $(cells[1])
-            .find('[data-test="gainers-losers-change"] span.font-semibold')
-            .text()
-            .trim(),
-        };
-      })
-      .get();
-
-    // Extract "Top Losers" data
-    const losersTable = $('[data-test="losers-table"] tbody tr');
-    const losers = losersTable
-      .map((_, row) => {
-        const cells = $(row).find('td');
-        return {
-          name: $(cells[0])
-            .find('[data-test="gainers-losers-label"]')
-            .text()
-            .trim(),
-          symbol: $(cells[0]).find('span.font-semibold').text().trim(),
-          price: $(cells[1])
-            .find('[data-test="gainers-losers-last"]')
-            .text()
-            .trim(),
-          change: $(cells[1])
-            .find('[data-test="gainers-losers-change"] span.font-normal')
-            .text()
-            .trim(),
-          changePercent: $(cells[1])
-            .find('[data-test="gainers-losers-change"] span.font-semibold')
-            .text()
-            .trim(),
-        };
-      })
-      .get();
-
-    return { gainers, losers };
-  }
-
   @UseInterceptors(CacheInterceptor)
   @ApiExcludeEndpoint()
-  @Get('market-movers/:indexSymbol')
+  @Get("market-movers/:symbol")
   // @Param('symbol') symbol: string,
   async marketMovers(
-    @Param('indexSymbol') indexSymbol: string,
+    @Param("symbol") symbol: string,
   ): Promise<object> {
     // get the index from the indexes array
     const indexEntry = indexes.find(
-      (index) => index.yahooFinanceSymbol === indexSymbol.toUpperCase(),
+      (index) => index.yahooFinanceSymbol === symbol.toUpperCase(),
     );
 
     // if the index is not found, return an error
     if (!indexEntry) {
       return {
         error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -761,8 +667,8 @@ export class AppController {
     // return the json from the database if it exists
     const marketMovers = await this.dataSource
       .getRepository(MarketMover)
-      .createQueryBuilder('marketMover')
-      .where('marketMover.symbol = :symbol', {
+      .createQueryBuilder("marketMover")
+      .where("marketMover.symbol = :symbol", {
         symbol: indexEntry.yahooFinanceSymbol,
       })
       .getOne();
@@ -788,19 +694,19 @@ export class AppController {
 
   // route for scraping a url
   @ApiExcludeEndpoint()
-  @Get('scrape')
+  @Get("scrape")
   async scrape(): Promise<object> {
     const url =
-      'https://superbalist.com/browse/men/shoes/sneakers?max_price=2000&page=3';
+      "https://superbalist.com/browse/men/shoes/sneakers?max_price=2000&page=3";
     const browser = await chromium.launch(options);
     const context = await browser.newContext(contextOptions);
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     const content = await page.content();
     await browser.close();
 
     // save the content to a file
-    fs.writeFileSync('sneakers.html', content);
+    fs.writeFileSync("sneakers.html", content);
 
     return { content };
   }
@@ -809,15 +715,15 @@ export class AppController {
   // Index related endpoints
   // **************************************************************
 
-  @Get('getIndexQuote/:symbol')
+  @Get("getIndexQuote/:symbol")
   async getIndexQuote(
-    @Param('symbol') symbol: string,
+    @Param("symbol") symbol: string,
   ): Promise<Quote | { error: string }> {
     // get the quote for the symbol from the database
     const quote = await this.dataSource
       .getRepository(QuoteEntity)
-      .createQueryBuilder('quote')
-      .where('quote.symbol = :symbol', { symbol: symbol })
+      .createQueryBuilder("quote")
+      .where("quote.symbol = :symbol", { symbol: symbol })
       .getOne();
 
     // if the quote does not exist, return an error
@@ -835,12 +741,12 @@ export class AppController {
   }
 
   // getIndexHistorical
-  @Get('getIndexPerformances')
+  @Get("getIndexPerformances")
   async getIndexPerformances(): Promise<SymbolPerformance[]> {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // for each index, get the history from this.performance
@@ -860,7 +766,7 @@ export class AppController {
   }
 
   // getIndexPerformance
-  @Get('getIndexPerformance/:symbol')
+  @Get("getIndexPerformance/:symbol")
   async getIndexPerformance(
     @Param() symbol: string,
   ): Promise<SymbolPerformance | { error: string }> {
@@ -882,12 +788,12 @@ export class AppController {
     return performance;
   }
 
-  @Get('dashboard')
+  @Get("dashboard")
   async dashboard(): Promise<object> {
     // get indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // for each index, get the quote, history, search and market movers
@@ -905,7 +811,7 @@ export class AppController {
       const marketMovers = await this.marketMovers(index.symbol);
 
       // forecast the index
-      const forecast = await this.forecast(index.symbol, index.symbol);
+      const forecast = await this.forecast(index.symbol);
 
       // return the dashboard object for the index
       return {
@@ -925,15 +831,62 @@ export class AppController {
     return dashboardResults;
   }
 
-  @Get('logs')
+  @Get("dashboard2")
+  async dashboard2(): Promise<object> {
+    // get indexes from the database
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder("index")
+      .getMany();
+
+    // for each index, get the quote, history, search and market movers
+    const dashboardPromises = [];
+    for (const index of indexes) {
+      dashboardPromises.push((async () => {
+        // get the quote for the index
+        //const quote = await this.getIndexQuote(index.symbol);
+        const quote = await this.quoteModule.quote(index.symbol);
+
+        // get the history for the index
+        const performance = await this.getIndexPerformance(index.symbol);
+
+        //get the news results for the index
+        const news = await this.news(index.symbol);
+
+        // get the market movers for the index
+        const marketMovers = await this.marketMovers(index.symbol);
+
+        // forecast the index
+        const forecast = await this.forecast(index.symbol);
+
+        // return the dashboard object for the index
+        return {
+          symbol: index.symbol,
+          quote: quote,
+          performance: performance,
+          news: news,
+          marketMovers: marketMovers,
+          forecast: forecast,
+        };
+      })());
+    }
+
+    // wait for all promises to resolve
+    const dashboardResults = await Promise.all(dashboardPromises);
+
+    // return the dashboard results
+    return dashboardResults;
+  }
+
+  @Get("logs")
   async getLogs(): Promise<object[]> {
     const logs = await this.dataSource
       .getRepository(LogEntry)
-      .createQueryBuilder('log')
-      .orderBy('log.id', 'DESC')
+      .createQueryBuilder("log")
+      .orderBy("log.id", "DESC")
       .getMany();
     return logs.map((log) => {
-      let createdISO: string = '';
+      let createdISO: string = "";
       // convert getTime() to ISO string
       if (log.created) {
         createdISO = new Date(log.created).toISOString();
@@ -948,23 +901,23 @@ export class AppController {
     });
   }
 
-  @Get('stocks/:indexSymbol')
+  @Get("stocks/:indexSymbol")
   async getStocksByIndex(
-    @Param('indexSymbol') indexSymbol: string,
+    @Param("indexSymbol") indexSymbol: string,
   ): Promise<object[]> {
     const stocks = await this.dataSource
       .getRepository(Stock)
-      .createQueryBuilder('stock')
-      .where('stock.indexSymbol = :indexSymbol', { indexSymbol })
+      .createQueryBuilder("stock")
+      .where("stock.indexSymbol = :indexSymbol", { indexSymbol })
       .getMany();
     return stocks;
   }
 
-  @Get('stocks')
+  @Get("stocks")
   async getStocks(): Promise<object[]> {
     const stocks = await this.dataSource
       .getRepository(Stock)
-      .createQueryBuilder('stock')
+      .createQueryBuilder("stock")
       .getMany();
     return stocks;
   }
@@ -972,15 +925,15 @@ export class AppController {
   // add route to get etf
   // only get id, symbol, name
   // allow search by symbol and name
-  @Get('etfs')
-  async getEtfs(@Query('search') search?: string): Promise<Etf[]> {
+  @Get("etfs")
+  async getEtfs(@Query("search") search?: string): Promise<Etf[]> {
     const query = this.dataSource
       .getRepository(Etf)
-      .createQueryBuilder('etf')
-      .select(['etf.id', 'etf.symbol', 'etf.name']);
+      .createQueryBuilder("etf")
+      .select(["etf.id", "etf.symbol", "etf.name"]);
 
     if (search) {
-      query.where('etf.symbol LIKE :search OR etf.name LIKE :search', {
+      query.where("etf.symbol LIKE :search OR etf.name LIKE :search", {
         search: `%${search}%`,
       });
     }
@@ -988,19 +941,19 @@ export class AppController {
     return await query.getMany();
   }
 
-  @Get('etf/:id')
-  async getEtfById(@Param('id') id: number): Promise<Etf | null> {
+  @Get("etf/:id")
+  async getEtfById(@Param("id") id: number): Promise<Etf | null> {
     const etf = await this.dataSource
       .getRepository(Etf)
-      .createQueryBuilder('etf')
-      .where('etf.id = :id', { id })
-      .select(['etf.id', 'etf.symbol', 'etf.name'])
+      .createQueryBuilder("etf")
+      .where("etf.id = :id", { id })
+      .select(["etf.id", "etf.symbol", "etf.name"])
       .getOne();
     return etf || null;
   }
 
-  @Get('price-change/:symbol')
-  async getPriceChange(@Param('symbol') symbol: string): Promise<PeerResult> {
+  @Get("price-change/:symbol")
+  async getPriceChange(@Param("symbol") symbol: string): Promise<PeerResult> {
     // get current price from the quote
     const quote = await yahooFinance.quote(symbol);
 
@@ -1018,13 +971,13 @@ export class AppController {
     };
   }
 
-  @Get('history/:symbol')
-  async history(@Param('symbol') symbol: string): Promise<History[]> {
+  @Get("history/:symbol")
+  async history(@Param("symbol") symbol: string): Promise<History[]> {
     return this.historyModule.history(symbol);
   }
 
-  @Get('peer/:symbol')
-  async peer(@Param('symbol') symbol: string): Promise<any> {
+  @Get("peer/:symbol")
+  async peer(@Param("symbol") symbol: string): Promise<any> {
     // trim the symbol to ensure it is in uppercase
     symbol = symbol.trim().toUpperCase();
 
@@ -1067,7 +1020,7 @@ export class AppController {
       market: quote.market,
       shortName: quote.shortName ?? quote.longName ?? symbol.toUpperCase(),
       longName: quote.longName ?? quote.shortName ?? symbol.toUpperCase(),
-      currency: quote.currency ?? 'USD',
+      currency: quote.currency ?? "USD",
       price: quote.regularMarketPrice,
       history: lastYearHistory,
       performance: performance.performance,

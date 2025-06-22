@@ -1,6 +1,6 @@
-import { History } from '../../entities/history.entity';
-import yahooFinance from 'yahoo-finance2';
-import { AppDataSource } from '../../data-source';
+import { History } from "../../entities/history.entity";
+import yahooFinance from "yahoo-finance2";
+import { AppDataSource } from "../../data-source";
 
 export class HistoryModule {
   constructor() {}
@@ -14,7 +14,7 @@ export class HistoryModule {
     const result = await yahooFinance.chart(symbol, {
       period1: startDate,
       period2: today,
-      interval: '1d',
+      interval: "1d",
     });
 
     // print length of result and result2
@@ -45,9 +45,9 @@ export class HistoryModule {
 
     // Query the database for the symbol
     const history = await AppDataSource.getRepository(History)
-      .createQueryBuilder('history')
-      .where('history.symbol = :symbol', { symbol })
-      .orderBy('history.date', 'ASC')
+      .createQueryBuilder("history")
+      .where("history.symbol = :symbol", { symbol })
+      .orderBy("history.date", "ASC")
       .getMany();
 
     // If history is found and is recent, return it
@@ -55,10 +55,16 @@ export class HistoryModule {
       history.length &&
       history[0].created > Date.now() - 24 * 60 * 60 * 1000
     ) {
+      console.log(
+        `History for ${symbol} found in database, returning cached data...`,
+      );
       return history;
     }
 
     // If not found or outdated, fetch from Yahoo Finance
+    console.log(
+      `History for ${symbol} not found or outdated, fetching fresh data...`,
+    );
     const newHistory = await this.fetchHistoricalData(symbol);
 
     // map the new history to the History entity
@@ -67,12 +73,13 @@ export class HistoryModule {
     }
 
     // save the new history to the database
+    console.log(`Saving new history for ${symbol} to the database...`);
     const historyRepository = AppDataSource.getRepository(History);
     const historyEntities = newHistory.map((entry) => {
       const historyEntry = new History();
       historyEntry.symbol = symbol;
       historyEntry.date = entry.date.getTime(); // Convert date to timestamp
-      historyEntry.dateString = entry.date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
+      historyEntry.dateString = entry.date.toISOString().split("T")[0]; // Format date as YYYY-MM-DD
       historyEntry.close = entry.close;
       historyEntry.open = entry.open;
       historyEntry.high = entry.high;
@@ -84,15 +91,17 @@ export class HistoryModule {
     });
 
     // Save the new history entries to the database
+    console.log(`Saving ${historyEntities.length} history entries...`);
     await historyRepository.save(historyEntities, {
-      chunk: 100, // Save in chunks of 100 to avoid memory issues
+      // chunk: 100, // Save in chunks of 100 to avoid memory issues
     });
 
     // Return the newly fetched history from db
+    console.log(`History for ${symbol} saved successfully.`);
     return AppDataSource.getRepository(History)
-      .createQueryBuilder('history')
-      .where('history.symbol = :symbol', { symbol })
-      .orderBy('history.date', 'ASC')
+      .createQueryBuilder("history")
+      .where("history.symbol = :symbol", { symbol })
+      .orderBy("history.date", "ASC")
       .getMany();
   };
 }

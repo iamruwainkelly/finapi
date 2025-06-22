@@ -1,7 +1,7 @@
-import { Quote } from '../../entities/quote.entity';
-import yahooFinance from 'yahoo-finance2';
-import { AppDataSource } from '../../data-source';
-import { YahooQuote } from 'src/typings/YahooQuote';
+import { Quote } from "../../entities/quote.entity";
+import yahooFinance from "yahoo-finance2";
+import { AppDataSource } from "../../data-source";
+import { YahooQuote } from "src/typings/YahooQuote";
 
 export class QuoteModule {
   constructor() {}
@@ -17,12 +17,12 @@ export class QuoteModule {
 
     // get quote from the database, where updated field is not older than 1 minute
     const quote = await AppDataSource.getRepository(Quote)
-      .createQueryBuilder('quote')
-      .where('quote.symbol = :symbol', { symbol })
-      .orderBy('quote.updated', 'DESC')
+      .createQueryBuilder("quote")
+      .where("quote.symbol = :symbol", { symbol })
+      .orderBy("quote.updated", "DESC")
       .getOne();
 
-    console.log(`Quote found in database: ${quote ? 'Yes' : 'No'}`);
+    console.log(`Quote found in database: ${quote ? "Yes" : "No"}`);
 
     // if the record exists and is not older than 1 minute, return it
     if (quote && quote.updated) {
@@ -45,47 +45,50 @@ export class QuoteModule {
 
         // return quote.json as YahooQuote;
       }
-    }
+    } else {
+      console.log(`Fetching quote for ${symbol} from Yahoo Finance...`);
+      // const json = await yahooFinance.quote(symbol);
 
-    console.log(
-      `Quote for ${symbol} is older than 1 minute, fetching fresh data...`,
-    );
-
-    // if the record does not exist, retrieve it
-    if (!quote) {
       console.log(
-        `Quote for ${symbol} not found in database, fetching from Yahoo Finance...`,
+        `Quote for ${symbol} is older than 1 minute, fetching fresh data...`,
       );
 
-      // sleep for 2 seconds to avoid hitting the API too quickly
-      // await new Promise((resolve) => setTimeout(resolve, 2000));
+      // if the record does not exist, retrieve it
+      if (!quote) {
+        console.log(
+          `Quote for ${symbol} not found in database, fetching from Yahoo Finance...`,
+        );
 
-      console.log(`Fetching quote for ${symbol} from Yahoo Finance...`);
+        // sleep for 2 seconds to avoid hitting the API too quickly
+        // await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const json = await yahooFinance.quote(symbol);
+        console.log(`Fetching quote for ${symbol} from Yahoo Finance...`);
 
+        const now = new Date();
+        const newQuote = new Quote();
+        newQuote.symbol = symbol;
+        newQuote.json = json;
+        newQuote.created = now.getTime();
+        newQuote.createdString = now.toISOString();
+        newQuote.updated = now.getTime();
+        newQuote.updatedString = now.toISOString();
+        await AppDataSource.getRepository(Quote).save(newQuote);
+        return newQuote.json as YahooQuote;
+      }
+
+      console.log(
+        `Quote for ${symbol} found in database, updating it with fresh data...`,
+      );
+
+      // if the record exists, update it
       const now = new Date();
-      const newQuote = new Quote();
-      newQuote.symbol = symbol;
-      newQuote.json = json;
-      newQuote.created = now.getTime();
-      newQuote.createdString = now.toISOString();
-      newQuote.updated = now.getTime();
-      newQuote.updatedString = now.toISOString();
-      await AppDataSource.getRepository(Quote).save(newQuote);
-      return newQuote.json as YahooQuote;
+      quote.json = json;
+      quote.updated = now.getTime();
+      quote.updatedString = now.toISOString();
+      await AppDataSource.getRepository(Quote).save(quote);
+
+      return quote.json as YahooQuote;
     }
-
-    console.log(
-      `Quote for ${symbol} found in database, updating it with fresh data...`,
-    );
-
-    // if the record exists, update it
-    const now = new Date();
-    quote.json = await yahooFinance.quote(symbol);
-    quote.updated = now.getTime();
-    quote.updatedString = now.toISOString();
-    await AppDataSource.getRepository(Quote).save(quote);
 
     return quote.json as YahooQuote;
   }
