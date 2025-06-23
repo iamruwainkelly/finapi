@@ -1,7 +1,7 @@
-import { Quote } from "../../entities/quote.entity";
-import yahooFinance from "yahoo-finance2";
-import { AppDataSource } from "../../data-source";
-import { YahooQuote } from "src/typings/YahooQuote";
+import { Quote } from '../../entities/quote.entity';
+import yahooFinance from 'yahoo-finance2';
+import { AppDataSource } from '../../data-source';
+import { YahooQuote } from 'src/typings/YahooQuote';
 
 export class QuoteModule {
   constructor() {}
@@ -17,12 +17,12 @@ export class QuoteModule {
 
     // get quote from the database, where updated field is not older than 1 minute
     const quote = await AppDataSource.getRepository(Quote)
-      .createQueryBuilder("quote")
-      .where("quote.symbol = :symbol", { symbol })
-      .orderBy("quote.updated", "DESC")
+      .createQueryBuilder('quote')
+      .where('quote.symbol = :symbol', { symbol })
+      .orderBy('quote.updated', 'DESC')
       .getOne();
 
-    console.log(`Quote found in database: ${quote ? "Yes" : "No"}`);
+    console.log(`Quote found in database: ${quote ? 'Yes' : 'No'}`);
 
     // if the record exists and is not older than 1 minute, return it
     if (quote && quote.updated) {
@@ -63,6 +63,7 @@ export class QuoteModule {
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         console.log(`Fetching quote for ${symbol} from Yahoo Finance...`);
+        const json = await yahooFinance.quote(symbol);
 
         const now = new Date();
         const newQuote = new Quote();
@@ -79,6 +80,7 @@ export class QuoteModule {
       console.log(
         `Quote for ${symbol} found in database, updating it with fresh data...`,
       );
+      const json = await yahooFinance.quote(symbol);
 
       // if the record exists, update it
       const now = new Date();

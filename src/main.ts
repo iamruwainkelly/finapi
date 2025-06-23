@@ -6,8 +6,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('NestJS Finance API')
-    .setDescription('The NestJS Finance API description')
+    .setTitle('Finance API')
+    .setDescription('The Finance API description')
     .setVersion('1.0')
     .addTag('yahoo-finance')
     .build();

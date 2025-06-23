@@ -1,60 +1,60 @@
-import { Index } from "./entities/index.entity";
+import { Index } from './entities/index.entity';
 // stock
-import { Stock } from "./entities/stock.entity"; // Assuming you have a Stock entity
-import { DataSource, In } from "typeorm";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import axios from "axios";
-import { parse } from "csv-parse/sync";
-import { SymbolMapping } from "./typings/SymbolMapping";
-import { MarketIndex } from "./typings/MarketIndex";
-import { MarketSymbol } from "./typings/MarketSymbol";
+import { Stock } from './entities/stock.entity'; // Assuming you have a Stock entity
+import { DataSource, In } from 'typeorm';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import axios from 'axios';
+import { parse } from 'csv-parse/sync';
+import { SymbolMapping } from './typings/SymbolMapping';
+import { MarketIndex } from './typings/MarketIndex';
+import { MarketSymbol } from './typings/MarketSymbol';
 
-import * as cheerio from "cheerio";
-import { Quote as QuoteEntity } from "./entities/quote.entity";
-import { Quote } from "./typings/Quote";
-import { Cron } from "./entities/cron.entity";
-import { Setting } from "./entities/setting.entity";
-import { History } from "./entities/history.entity";
-import { Etf } from "./entities/etf.entity";
+import * as cheerio from 'cheerio';
+import { Quote as QuoteEntity } from './entities/quote.entity';
+import { Quote } from './typings/Quote';
+import { Cron } from './entities/cron.entity';
+import { Setting } from './entities/setting.entity';
+import { History } from './entities/history.entity';
+import { Etf } from './entities/etf.entity';
 
-import { Browser, chromium, LaunchOptions } from "playwright";
-import { MarketMover } from "./entities/marketMover.entity";
-import { News } from "./entities/news.entity";
+import { Browser, chromium, LaunchOptions } from 'playwright';
+import { MarketMover } from './entities/marketMover.entity';
+import { News } from './entities/news.entity';
 
-import { Logger as TypeOrmLogger } from "typeorm";
+import { Logger as TypeOrmLogger } from 'typeorm';
 
-import { LogEntry } from "./entities/logentry.entity";
+import { LogEntry } from './entities/logentry.entity';
 
-import { extractStocks, getTopMovers } from "./helpers/modules/movers";
-import { Etf as EtfInterface } from "./typings/Etf";
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { parse as csvParse } from "csv-parse";
-import yahooFinance from "yahoo-finance2";
+import { extractStocks, getTopMovers } from './helpers/modules/movers';
+import { Etf as EtfInterface } from './typings/Etf';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { parse as csvParse } from 'csv-parse';
+import yahooFinance from 'yahoo-finance2';
 
-import { HistoryModule } from "./helpers/modules/history";
-import { QuoteModule } from "./helpers/modules/quote";
-import { YahooQuote } from "./typings/YahooQuote";
+import { HistoryModule } from './helpers/modules/history';
+import { QuoteModule } from './helpers/modules/quote';
+import { YahooQuote } from './typings/YahooQuote';
 
 const options: LaunchOptions = {
   headless: true,
   slowMo: 100,
   // set some args to make playwright behave more like a real browser
   args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-web-security",
-    "--disable-features=IsolateOrigins,site-per-process",
-    "--allow-insecure-localhost",
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-web-security',
+    '--disable-features=IsolateOrigins,site-per-process',
+    '--allow-insecure-localhost',
   ],
-  ignoreDefaultArgs: ["--enable-automation"],
+  ignoreDefaultArgs: ['--enable-automation'],
 };
 
 // create an array of user agents
 const userAgents = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-  "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
 ];
 
 const contextOptions = {
@@ -67,7 +67,7 @@ export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
 
   logQuery(query: string, parameters?: any[], queryRunner?: any) {
-    this.log("log", query + " " + JSON.stringify(parameters));
+    this.log('log', query + ' ' + JSON.stringify(parameters));
   }
   logQueryError(
     error: string,
@@ -75,7 +75,7 @@ export class DatabaseLogger implements TypeOrmLogger {
     parameters?: any[],
     queryRunner?: any,
   ) {
-    this.log("warn", error + " | " + query + " " + JSON.stringify(parameters));
+    this.log('warn', error + ' | ' + query + ' ' + JSON.stringify(parameters));
   }
   logQuerySlow(
     time: number,
@@ -84,17 +84,17 @@ export class DatabaseLogger implements TypeOrmLogger {
     queryRunner?: any,
   ) {
     this.log(
-      "warn",
+      'warn',
       `Slow query (${time}ms): ${query} ${JSON.stringify(parameters)}`,
     );
   }
   logSchemaBuild(message: string, queryRunner?: any) {
-    this.log("info", message);
+    this.log('info', message);
   }
   logMigration(message: string, queryRunner?: any) {
-    this.log("info", message);
+    this.log('info', message);
   }
-  log(level: "log" | "info" | "warn", message: any, queryRunner?: any) {
+  log(level: 'log' | 'info' | 'warn', message: any, queryRunner?: any) {
     const logRepo = this.dataSource.getRepository(LogEntry);
     const entry = logRepo.create({ level, message: String(message) });
     logRepo.save(entry);
@@ -116,9 +116,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     csvUrl: string,
     mapping: SymbolMapping,
     outputPath: string = path.join(
-      "./src",
-      "output",
-      new Date().toISOString().replace(/[:.]/g, "-") + ".json",
+      './src',
+      'output',
+      new Date().toISOString().replace(/[:.]/g, '-') + '.json',
     ),
   ): Promise<MarketSymbol[]> {
     try {
@@ -142,7 +142,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         .map((record) => {
           const symbol: MarketSymbol = {
             symbol: record[mapping.symbolKey].trim(),
-            name: record[mapping.nameKey]?.trim() || "",
+            name: record[mapping.nameKey]?.trim() || '',
           };
           return symbol;
         });
@@ -153,7 +153,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       return symbols;
     } catch (err) {
       console.error(
-        "getStocksFromCsv - Failed to fetch or parse CSV :",
+        'getStocksFromCsv - Failed to fetch or parse CSV :',
         err.message,
       );
       return [];
@@ -176,9 +176,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       const response = await axios.get(url);
       const html = response.data;
 
-      // write the HTML to a file ~/src/data/wikipedia.html
-      fs.writeFileSync(path.join("./src", "data", "wikipedia.html"), html);
-
       // Load the HTML into Cheerio
       const $ = cheerio.load(html);
 
@@ -188,9 +185,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       // Extract headers
       const headers: string[] = [];
       table
-        .find("tr")
+        .find('tr')
         .first()
-        .find("th")
+        .find('th')
         .each((i, el) => {
           headers.push($(el).text().trim());
         });
@@ -198,14 +195,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       // Extract rows
       const stocks: MarketSymbol[] = [];
       table
-        .find("tr")
+        .find('tr')
         .slice(1)
         .each((i, row) => {
-          const cells = $(row).find("td");
+          const cells = $(row).find('td');
           if (cells.length === headers.length) {
             const stock: MarketSymbol = {
-              symbol: "",
-              name: "",
+              symbol: '',
+              name: '',
             };
             cells.each((j, cell) => {
               // if this cell is the symbol cell, use the mapping to get the symbol
@@ -223,7 +220,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
       return stocks;
     } catch (err) {
-      console.error("Failed to fetch or parse Wikipedia:", err.message);
+      console.error('Failed to fetch or parse Wikipedia:', err.message);
       return [];
     }
   }
@@ -232,7 +229,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // execute the task based on the cronName and methodName
     // execute the method dynamically
     const method = (this as any)[cron.method];
-    if (typeof method === "function") {
+    if (typeof method === 'function') {
       console.log(`Running cron: ${cron.name} with method: ${cron.method}`);
 
       await method.call(this);
@@ -246,15 +243,15 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         lastRunAt: now.toISOString(),
       });
       this.dataSource.getRepository(LogEntry).save({
-        level: "info",
+        level: 'info',
         message: `Cron ${cron.name} completed successfully.`,
-        context: "runCron",
+        context: 'runCron',
       });
     } else {
       this.dataSource.getRepository(LogEntry).save({
-        level: "error",
+        level: 'error',
         message: `Method ${cron.method} not found for cron: ${cron.name}`,
-        context: "runCron",
+        context: 'runCron',
       });
     }
   };
@@ -263,7 +260,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   initializeSettingsData = async () => {
     // get data from file ~/src/data/settings.json
     const settingsData: { key: string; value: string }[] = JSON.parse(
-      fs.readFileSync(path.join("./src", "data", "settings.json"), "utf-8"),
+      fs.readFileSync(path.join('./src', 'data', 'settings.json'), 'utf-8'),
     );
 
     // create an array of settings keys from the settingsData
@@ -286,17 +283,17 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // if there are no settings to create, return
     if (settingsToCreate.length === 0) {
       this.dataSource.getRepository(LogEntry).save({
-        level: "info",
+        level: 'info',
         message:
-          "Settings table already initialized. No new settings to create.",
-        context: "initializeSettingsData",
+          'Settings table already initialized. No new settings to create.',
+        context: 'initializeSettingsData',
       });
       return;
     }
 
     // filter the settingsData to only include the settings to create
     const settingsToCreateData = settingsData.filter((data) =>
-      settingsToCreate.includes(data.key)
+      settingsToCreate.includes(data.key),
     );
 
     // if there are settings to create, create them
@@ -314,10 +311,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   initializeIndexData = async () => {
     // get data from file ~/src/data/indexes.json
     const indicesData: MarketIndex[] = JSON.parse(
-      fs.readFileSync(
-        path.join("./src", "data", "indexData.json"),
-        "utf-8",
-      ),
+      fs.readFileSync(path.join('./src', 'data', 'indexData.json'), 'utf-8'),
     );
 
     // create an array of index symbols from the indicesData
@@ -338,7 +332,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     // if there are no indices to create, return
     const indicesToCreateData = indicesData.filter((data) =>
-      indicesToCreate.includes(data.yahooFinanceSymbol)
+      indicesToCreate.includes(data.yahooFinanceSymbol),
     );
 
     // if there are indices to create, create them
@@ -355,18 +349,15 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     await indexRepository.save(indicesToCreateEntities);
     await this.dataSource.getRepository(LogEntry).save({
-      level: "info",
-      message: "Index table checked and initialized (if needed).",
-      context: "initializeIndexData",
+      level: 'info',
+      message: 'Index table checked and initialized (if needed).',
+      context: 'initializeIndexData',
     });
   };
 
   initializeIndexStockData = async () => {
     const IndexesJsonData: MarketIndex[] = JSON.parse(
-      fs.readFileSync(
-        path.join("./src", "data", "indexData.json"),
-        "utf-8",
-      ),
+      fs.readFileSync(path.join('./src', 'data', 'indexData.json'), 'utf-8'),
     );
 
     // loop through each index and if the stockListSourceType is 'csv', fetch the CSV and save the stocks to the database
@@ -381,10 +372,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
       if (existingStocks.length > 0) {
         this.dataSource.getRepository(LogEntry).save({
-          level: "info",
-          message:
-            `Stocks for index ${jsonIndex.yahooFinanceSymbol} already exist in the database. Skipping.`,
-          context: "initializeIndexStockData",
+          level: 'info',
+          message: `Stocks for index ${jsonIndex.yahooFinanceSymbol} already exist in the database. Skipping.`,
+          context: 'initializeIndexStockData',
         });
         continue; // Skip to the next index if stocks already exist
       }
@@ -393,7 +383,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
       // switch based on the stockListSourceType
       switch (stockConfig.sourceType) {
-        case "csv": {
+        case 'csv': {
           const mapping: SymbolMapping = {
             symbolKey: stockConfig.symbolKey,
             nameKey: stockConfig.nameKey,
@@ -405,7 +395,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
           break;
         }
 
-        case "wikipedia": {
+        case 'wikipedia': {
           const mapping: SymbolMapping = {
             symbolKey: stockConfig.symbolKey,
             nameKey: stockConfig.nameKey,
@@ -430,10 +420,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
       if (!index) {
         this.dataSource.getRepository(LogEntry).save({
-          level: "error",
-          message:
-            `Index ${jsonIndex.yahooFinanceSymbol} not found in the database. Skipping.`,
-          context: "initializeIndexStockData",
+          level: 'error',
+          message: `Index ${jsonIndex.yahooFinanceSymbol} not found in the database. Skipping.`,
+          context: 'initializeIndexStockData',
         });
         continue;
       }
@@ -451,10 +440,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
       await stockRepository.save(stockEntities);
       this.dataSource.getRepository(LogEntry).save({
-        level: "info",
-        message:
-          `Stocks for index ${jsonIndex.yahooFinanceSymbol} saved successfully.`,
-        context: "initializeIndexStockData",
+        level: 'info',
+        message: `Stocks for index ${jsonIndex.yahooFinanceSymbol} saved successfully.`,
+        context: 'initializeIndexStockData',
       });
     }
   };
@@ -466,8 +454,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       // read csv from file ~/src/data/etfs.csv line by line
       // and do for each line:
 
-      fs.createReadStream(path.join("./src", "data", "etfs.csv"), {
-        encoding: "utf-8",
+      fs.createReadStream(path.join('./src', 'data', 'etfs.csv'), {
+        encoding: 'utf-8',
       })
         .pipe(
           csvParse({
@@ -476,10 +464,10 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
             trim: true,
           }),
         )
-        .on("data", (row: EtfInterface) => {
+        .on('data', (row: EtfInterface) => {
           etfs.push(row);
         })
-        .on("end", async () => {
+        .on('end', async () => {
           // loop through each ETF and save it to the database
           const etfRepository = this.dataSource.getRepository(Etf);
           for (const etfData of etfs) {
@@ -490,13 +478,21 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
             if (existingEtf) {
               this.dataSource.getRepository(LogEntry).save({
-                level: "info",
-                message:
-                  `ETF ${etfData.symbol} already exists in the database. Skipping.`,
-                context: "initializeEtfData",
+                level: 'info',
+                message: `ETF ${etfData.symbol} already exists in the database. Skipping.`,
+                context: 'initializeEtfData',
               });
               continue; // Skip to the next ETF if it already exists
             }
+
+            // skip if the symbol is empty or contains spaces
+            if (!etfData.symbol || /\s/.test(etfData.symbol)) continue;
+
+            // skip if the symbol starts with ^
+            if (etfData.symbol.startsWith('^')) continue;
+
+            // skip if the symbol has a dot in it
+            if (etfData.symbol.includes('.')) continue;
 
             // create a new ETF entity, same as the EtfInterface
             let etf = new Etf();
@@ -513,14 +509,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
             await etfRepository.save(etf);
           }
         })
-        .on("error", (err) => {
-          console.error("Error reading file:", err);
+        .on('error', (err) => {
+          console.error('Error reading file:', err);
         });
 
       return etfs;
     } catch (err) {
       console.error(
-        "initializeEtfData - Failed to fetch or parse CSV:",
+        'initializeEtfData - Failed to fetch or parse CSV:',
         err.message,
       );
       return [];
@@ -531,7 +527,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   initializeCronJobs = async () => {
     // get cron jobs from crons.json file
     const cronData: Cron[] = JSON.parse(
-      fs.readFileSync(path.join("./src", "data", "crons.json"), "utf-8"),
+      fs.readFileSync(path.join('./src', 'data', 'crons.json'), 'utf-8'),
     );
 
     // check if the crons already exist in the database
@@ -548,16 +544,16 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // if there are no crons to create, return
     if (cronsToCreate.length === 0) {
       this.dataSource.getRepository(LogEntry).save({
-        level: "info",
-        message: "Cron jobs already initialized. No new crons to create.",
-        context: "initializeCronJobs",
+        level: 'info',
+        message: 'Cron jobs already initialized. No new crons to create.',
+        context: 'initializeCronJobs',
       });
       // return;
     } else {
       this.dataSource.getRepository(LogEntry).save({
-        level: "info",
+        level: 'info',
         message: `Found ${cronsToCreate.length} new cron jobs to create.`,
-        context: "initializeCronJobs",
+        context: 'initializeCronJobs',
       });
 
       // create the crons in the database
@@ -580,7 +576,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     const cronRepository = this.dataSource.getRepository(Cron);
     const crons = await cronRepository.find({
       where: { enabled: true },
-      order: { id: "ASC" }, // Order by id ascending
+      order: { id: 'ASC' }, // Order by id ascending
     });
 
     // use a foreach loop to iterate over the crons
@@ -597,9 +593,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       setInterval(
         async () => {
           this.dataSource.getRepository(LogEntry).save({
-            level: "info",
+            level: 'info',
             message: `Running scheduled task: ${cron.name}`,
-            context: "initializeCronJobs",
+            context: 'initializeCronJobs',
           });
           await this.runCron(cron);
         },
@@ -615,7 +611,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder("index")
+      .createQueryBuilder('index')
       .getMany();
 
     // loop each index and perform a quoteCombine for each index
@@ -637,7 +633,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder("index")
+      .createQueryBuilder('index')
       .getMany();
 
     // loop through each index and fetch the history from the history table
@@ -662,7 +658,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     const context = await this.browser.newContext(contextOptions);
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
     const content = await page.content();
     await context.close(); // Close context when done
 
@@ -670,14 +666,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     const $ = cheerio.load(content);
 
     // extract json from script id="__NEXT_DATA__" tag
-    const json = $("#__NEXT_DATA__").text();
+    const json = $('#__NEXT_DATA__').text();
 
     // parse the json and get the data from the props object
     const data = JSON.parse(json);
 
     const stocks = extractStocks(data);
-    const gainers = getTopMovers(stocks, "Up");
-    const losers = getTopMovers(stocks, "Down");
+    const gainers = getTopMovers(stocks, 'Up');
+    const losers = getTopMovers(stocks, 'Down');
 
     // return the GainersAndLosers object
     return {
@@ -692,7 +688,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder("index")
+      .createQueryBuilder('index')
       .getMany();
 
     // loop through each index and fetch the market movers
@@ -717,26 +713,23 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         if (lastCreated < fourHoursAgo) {
           refetch = true;
           this.dataSource.getRepository(LogEntry).save({
-            level: "info",
-            message:
-              `Market movers for index ${index.symbol} are older than 4 hours. Refetching.`,
-            context: "getIndexMarketMovers",
+            level: 'info',
+            message: `Market movers for index ${index.symbol} are older than 4 hours. Refetching.`,
+            context: 'getIndexMarketMovers',
           });
         } else {
           this.dataSource.getRepository(LogEntry).save({
-            level: "info",
-            message:
-              `Market movers for index ${index.symbol} already exist and are up to date. Skipping.`,
-            context: "getIndexMarketMovers",
+            level: 'info',
+            message: `Market movers for index ${index.symbol} already exist and are up to date. Skipping.`,
+            context: 'getIndexMarketMovers',
           });
         }
       } else {
         refetch = true;
         this.dataSource.getRepository(LogEntry).save({
-          level: "info",
-          message:
-            `No market movers found for index ${index.symbol}. Fetching new data.`,
-          context: "getIndexMarketMovers",
+          level: 'info',
+          message: `No market movers found for index ${index.symbol}. Fetching new data.`,
+          context: 'getIndexMarketMovers',
         });
       }
 
@@ -762,10 +755,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         marketMover.created = new Date().getTime();
         await marketMoverRepository.save(marketMover);
         this.dataSource.getRepository(LogEntry).save({
-          level: "info",
-          message:
-            `Market movers for index ${index.symbol} saved successfully.`,
-          context: "getIndexMarketMovers",
+          level: 'info',
+          message: `Market movers for index ${index.symbol} saved successfully.`,
+          context: 'getIndexMarketMovers',
         });
       }
     }
@@ -778,7 +770,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder("index")
+      .createQueryBuilder('index')
       .getMany();
 
     // loop through each index and fetch the news from news table
@@ -804,35 +796,32 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         if (lastCreated < fourHoursAgo) {
           refetch = true;
           this.dataSource.getRepository(LogEntry).save({
-            level: "info",
-            message:
-              `News for index ${index.symbol} are older than 4 hours. Refetching.`,
-            context: "getIndexNews",
+            level: 'info',
+            message: `News for index ${index.symbol} are older than 4 hours. Refetching.`,
+            context: 'getIndexNews',
           });
         } else {
           this.dataSource.getRepository(LogEntry).save({
-            level: "info",
-            message:
-              `News for index ${index.symbol} already exist and are up to date. Skipping.`,
-            context: "getIndexNews",
+            level: 'info',
+            message: `News for index ${index.symbol} already exist and are up to date. Skipping.`,
+            context: 'getIndexNews',
           });
         }
       } else {
         refetch = true;
         this.dataSource.getRepository(LogEntry).save({
-          level: "info",
-          message:
-            `No news found for index ${index.symbol}. Fetching new data.`,
-          context: "getIndexNews",
+          level: 'info',
+          message: `No news found for index ${index.symbol}. Fetching new data.`,
+          context: 'getIndexNews',
         });
       }
 
       if (refetch) {
         // fetch the news from Yahoo Finance
         this.dataSource.getRepository(LogEntry).save({
-          level: "info",
+          level: 'info',
           message: `Fetching news for index: ${index.symbol}`,
-          context: "getIndexNews",
+          context: 'getIndexNews',
         });
 
         console.log(`Fetching news for index: ${index.symbol}`);
@@ -851,9 +840,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
         // log the success message
         this.dataSource.getRepository(LogEntry).save({
-          level: "info",
+          level: 'info',
           message: `News for index ${index.symbol} saved successfully.`,
-          context: "getIndexNews",
+          context: 'getIndexNews',
         });
       }
     }
@@ -864,8 +853,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     const logRepo = this.dataSource.getRepository(LogEntry);
     // Get the ids of the last 100 entries (newest first)
     const last100 = await logRepo.find({
-      order: { id: "DESC" },
-      select: ["id"],
+      order: { id: 'DESC' },
+      select: ['id'],
       take: 100,
     });
     if (last100.length === 0) return;
@@ -874,35 +863,34 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     await logRepo
       .createQueryBuilder()
       .delete()
-      .where("id NOT IN (:...ids)", { ids: idsToKeep })
+      .where('id NOT IN (:...ids)', { ids: idsToKeep })
       .execute();
     // Optionally log the cleanup
     await logRepo.save({
-      level: "info",
-      message:
-        `LogEntry cleanup: kept ${idsToKeep.length} entries, deleted older ones`,
-      context: "cleanupLogEntries",
+      level: 'info',
+      message: `LogEntry cleanup: kept ${idsToKeep.length} entries, deleted older ones`,
+      context: 'cleanupLogEntries',
     });
   }
 
   async onModuleInit() {
     this.browser = await chromium.launch(options);
 
-    console.log("Initializing index data...");
+    console.log('Initializing index data...');
     await this.initializeIndexData();
-    console.log("Index data initialized.");
+    console.log('Index data initialized.');
 
-    console.log("Initializing index stock data...");
+    console.log('Initializing index stock data...');
     await this.initializeIndexStockData();
-    console.log("Index stock data initialized.");
+    console.log('Index stock data initialized.');
 
-    console.log("Initializing ETF data...");
+    console.log('Initializing ETF data...');
     await this.initializeEtfData();
-    console.log("ETF data initialized.");
+    console.log('ETF data initialized.');
 
-    console.log("Initializing settings data...");
+    console.log('Initializing settings data...');
     await this.initializeCronJobs();
-    console.log("Cron jobs initialized.");
+    console.log('Cron jobs initialized.');
   }
 
   async onModuleDestroy() {
