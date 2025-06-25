@@ -494,6 +494,10 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
             // skip if the symbol has a dot in it
             if (etfData.symbol.includes('.')) continue;
 
+            console.log(
+              `Creating ETF entity for symbol: ${etfData.symbol} - ${etfData.name}`,
+            );
+
             // create a new ETF entity, same as the EtfInterface
             let etf = new Etf();
             etf.symbol = etfData.symbol;

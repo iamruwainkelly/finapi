@@ -1,3 +1,8 @@
+"""
+cloudscraper is amazing. bypasses Cloudflare's anti-bot page.
+this script pull 25 records per page from etfdb.com.
+"""
+
 import cloudscraper
 
 # Create a CloudScraper instance

@@ -74,15 +74,6 @@ importers:
       playwright:
         specifier: ^1.52.0
         version: 1.53.0
-      playwright-extra:
-        specifier: ^4.3.6
-        version: 4.3.6(playwright-core@1.53.0)(playwright@1.53.0)
-      playwright-extra-plugin-stealth:
-        specifier: ^0.0.1
-        version: 0.0.1
-      playwright-stealth:
-        specifier: ^0.0.1
-        version: 0.0.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -4129,24 +4120,6 @@ packages:
     resolution: {integrity: sha512-mGLg8m0pm4+mmtB7M89Xw/GSqoNC+twivl8ITteqvAndachozYe2ZA7srU6uleV1vEdAHYqjq+SV8SNxRRFYBw==}
     engines: {node: '>=18'}
     hasBin: true
-
-  playwright-extra-plugin-stealth@0.0.1:
-    resolution: {integrity: sha512-eI0Ujf4MXbcupzlVEXaaOnb+Exjt1sFi7t/3KxIA5pVww+WRAXRWdhqTz0glX62jJq2YM8fLu+GyvULpjTpZrw==}
-
-  playwright-extra@4.3.6:
-    resolution: {integrity: sha512-q2rVtcE8V8K3vPVF1zny4pvwZveHLH8KBuVU2MoE3Jw4OKVoBWsHI9CH9zPydovHHOCDxjGN2Vg+2m644q3ijA==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      playwright: '*'
-      playwright-core: '*'
-    peerDependenciesMeta:
-      playwright:
-        optional: true
-      playwright-core:
-        optional: true
-
-  playwright-stealth@0.0.1:
-    resolution: {integrity: sha512-z7iJllbLk4AroVisI2yjTP3F6I6wLBNbaQiohJ8E8pHB2n6UMYYqtaAL1CubSFHWJ7VJ1vVfy40NTE6WSijXUg==}
 
   playwright@1.53.0:
     resolution: {integrity: sha512-ghGNnIEYZC4E+YtclRn4/p6oYbdPiASELBIYkBXfaTVKreQUYbMUYQDwS12a8F0/HtIjr/CkGjtwABeFPGcS4Q==}
@@ -9723,19 +9696,6 @@ snapshots:
       find-up: 5.0.0
 
   playwright-core@1.53.0: {}
-
-  playwright-extra-plugin-stealth@0.0.1: {}
-
-  playwright-extra@4.3.6(playwright-core@1.53.0)(playwright@1.53.0):
-    dependencies:
-      debug: 4.4.1(supports-color@5.5.0)
-    optionalDependencies:
-      playwright: 1.53.0
-      playwright-core: 1.53.0
-    transitivePeerDependencies:
-      - supports-color
-
-  playwright-stealth@0.0.1: {}
 
   playwright@1.53.0:
     dependencies:
