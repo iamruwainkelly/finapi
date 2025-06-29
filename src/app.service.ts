@@ -15,7 +15,7 @@ import { Cron } from './entities/cron.entity';
 import { Setting } from './entities/setting.entity';
 import { Etf } from './entities/etf.entity';
 
-import { Browser, chromium, LaunchOptions } from 'playwright';
+import { BrowserContext, chromium, ChromiumBrowser } from 'patchright';
 import { MarketMover } from './entities/marketMover.entity';
 import { News } from './entities/news.entity';
 
@@ -32,33 +32,6 @@ import yahooFinance from 'yahoo-finance2';
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
 import { YahooQuote } from './typings/YahooQuote';
-
-const options: LaunchOptions = {
-  headless: true,
-  slowMo: 100,
-  // set some args to make playwright behave more like a real browser
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process',
-    '--allow-insecure-localhost',
-  ],
-  ignoreDefaultArgs: ['--enable-automation'],
-};
-
-// create an array of user agents
-const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-];
-
-const contextOptions = {
-  viewport: { width: 1280, height: 800 },
-  userAgent: userAgents[Math.floor(Math.random() * userAgents.length)],
-  deviceScaleFactor: 1,
-};
 
 export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
@@ -100,7 +73,7 @@ export class DatabaseLogger implements TypeOrmLogger {
 
 @Injectable()
 export class AppService implements OnModuleInit, OnModuleDestroy {
-  private browser: Browser;
+  private browser: BrowserContext;
 
   constructor(
     // @InjectRepository(Index)
@@ -653,11 +626,10 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // fetch the market movers from investing.com
     const url = `https://za.investing.com/indices/${index.investingUrlName}`;
 
-    const context = await this.browser.newContext(contextOptions);
-    const page = await context.newPage();
+    const page = await this.browser.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     const content = await page.content();
-    await context.close(); // Close context when done
+    await page.close();
 
     // load the content into cheerio
     const $ = cheerio.load(content);
@@ -871,7 +843,11 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    this.browser = await chromium.launch(options);
+    this.browser = await chromium.launchPersistentContext('./browser', {
+      channel: 'chrome',
+      headless: false,
+      viewport: null,
+    });
 
     console.log('Initializing index data...');
     await this.initializeIndexData();

@@ -2,7 +2,6 @@ import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { AppService } from './app.service';
 import yahooFinance from 'yahoo-finance2';
 
-// import { chromium, LaunchOptions } from 'playwright';
 import { chromium } from 'patchright';
 
 import * as fs from 'node:fs';
@@ -78,21 +77,6 @@ const indexes = [
     investingUrlName: 'switzerland-20',
   },
 ];
-
-// launch options for Playwright
-// const options: LaunchOptions = {
-//   headless: true,
-//   slowMo: 100,
-//   // set some args to make playwright behave more like a real browser
-//   args: [
-//     '--no-sandbox',
-//     '--disable-setuid-sandbox',
-//     '--disable-web-security',
-//     '--disable-features=IsolateOrigins,site-per-process',
-//     '--allow-insecure-localhost',
-//   ],
-//   ignoreDefaultArgs: ['--enable-automation'],
-// };
 
 // create an array of user agents
 const userAgents = [
