@@ -1,6 +1,6 @@
 import { Index } from './entities/index.entity';
 // stock
-import { Stock } from './entities/stock.entity'; // Assuming you have a Stock entity
+import { Stock } from './entities/stock.entity';
 import { DataSource, In } from 'typeorm';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -11,11 +11,8 @@ import { MarketIndex } from './typings/MarketIndex';
 import { MarketSymbol } from './typings/MarketSymbol';
 
 import * as cheerio from 'cheerio';
-import { Quote as QuoteEntity } from './entities/quote.entity';
-import { Quote } from './typings/Quote';
 import { Cron } from './entities/cron.entity';
 import { Setting } from './entities/setting.entity';
-import { History } from './entities/history.entity';
 import { Etf } from './entities/etf.entity';
 
 import { Browser, chromium, LaunchOptions } from 'playwright';
@@ -493,10 +490,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
             // skip if the symbol has a dot in it
             if (etfData.symbol.includes('.')) continue;
-
-            console.log(
-              `Creating ETF entity for symbol: ${etfData.symbol} - ${etfData.name}`,
-            );
 
             // create a new ETF entity, same as the EtfInterface
             let etf = new Etf();

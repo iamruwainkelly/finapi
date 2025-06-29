@@ -3,9 +3,8 @@ import { AppService } from './app.service';
 import yahooFinance from 'yahoo-finance2';
 
 // import { chromium, LaunchOptions } from 'playwright';
-import { chromium, LaunchOptions } from 'patchright';
+import { chromium } from 'patchright';
 
-import * as cheerio from 'cheerio';
 import * as fs from 'node:fs';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
@@ -17,7 +16,7 @@ import { History } from './entities/history.entity';
 import { Index } from './entities/index.entity';
 import { LogEntry } from './entities/logentry.entity';
 
-import { CustomRepositoryNotFoundError, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { PerformanceDays } from './typings/PerformanceDats';
 import {
   ChangeAndChangePercent,
@@ -27,13 +26,12 @@ import { Quote } from './typings/Quote';
 
 // prediction
 import * as prediction from './helpers/modules/prediction.js';
-import { YahooHistoric } from './typings/YahooHistoric';
 import { MarketMover } from './entities/marketMover.entity';
 import { News } from './entities/news.entity';
 import { Stock } from './entities/stock.entity';
 
 // import metrics.ts
-import { computeMetrics, getMetrics } from './helpers/modules/metrics';
+import { getMetrics } from './helpers/modules/metrics';
 import { Metrics } from './typings/Metrics';
 import { QuoteSummaryResult } from 'yahoo-finance2/dist/esm/src/modules/quoteSummary-iface';
 import { Etf } from './entities/etf.entity';
@@ -41,7 +39,6 @@ import { YahooQuote } from './typings/YahooQuote';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
-import { factorial } from 'simple-statistics';
 
 interface PeerResult {
   symbol: string;
@@ -83,19 +80,19 @@ const indexes = [
 ];
 
 // launch options for Playwright
-const options: LaunchOptions = {
-  headless: true,
-  slowMo: 100,
-  // set some args to make playwright behave more like a real browser
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process',
-    '--allow-insecure-localhost',
-  ],
-  ignoreDefaultArgs: ['--enable-automation'],
-};
+// const options: LaunchOptions = {
+//   headless: true,
+//   slowMo: 100,
+//   // set some args to make playwright behave more like a real browser
+//   args: [
+//     '--no-sandbox',
+//     '--disable-setuid-sandbox',
+//     '--disable-web-security',
+//     '--disable-features=IsolateOrigins,site-per-process',
+//     '--allow-insecure-localhost',
+//   ],
+//   ignoreDefaultArgs: ['--enable-automation'],
+// };
 
 // create an array of user agents
 const userAgents = [
@@ -695,18 +692,22 @@ export class AppController {
   @ApiExcludeEndpoint()
   @Get('scrape')
   async scrape(): Promise<object> {
-    options.headless = false; // run in headless mode
-    const browser = await chromium.launch(options);
-    const context = await browser.newContext(contextOptions);
-    const page = await context.newPage();
+    // options.headless = false; // run in headless mode
+    const browser = await chromium.launchPersistentContext('./browser', {
+      channel: 'chrome',
+      headless: false,
+      viewport: null,
+    });
+    // const context = await browser.newContext(contextOptions);
+    const page = await browser.newPage();
 
     // intialize the page and store any cookies for the next request
     await page.goto('https://etfdb.com', {
       waitUntil: 'domcontentloaded',
     });
 
-    // sleep logic for  5 seconds
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // sleep logic for  3 seconds
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const BASE_URL =
       'https://etfdb.com/data_set/?tm=92882&no_null_sort=true&count_by_id=&sort=symbol&order=asc&offset=';

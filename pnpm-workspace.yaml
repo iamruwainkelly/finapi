@@ -1,9 +1,0 @@
-onlyBuiltDependencies:
-  - '@nestjs/core'
-  - '@scarf/scarf'
-  - '@swc/core'
-  - '@tensorflow/tfjs-node'
-  - better-sqlite3
-  - core-js
-  - esbuild
-  - sqlite3

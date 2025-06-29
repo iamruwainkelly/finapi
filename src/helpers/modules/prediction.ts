@@ -1,5 +1,6 @@
 import yahooFinance from 'yahoo-finance2';
-import * as tf from '@tensorflow/tfjs-node';
+//import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import * as ti from 'technicalindicators';
 
 const sectorMessages: Record<string, string[]> = {

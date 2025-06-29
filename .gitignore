@@ -58,3 +58,15 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 src/output/
 data.db
 data.db-journal
+
+# python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# venv
+venv/
+
+# chrome
+browser/
