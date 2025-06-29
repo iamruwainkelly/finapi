@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "json-server": "json-server --watch --port 3001 db.json",
     "tester": "npx swc tester.ts -o tester.js && node tester.js",
-    "tensorfix": "node tensorfix.js"
+    "tensorfix": "node tensorfix.js",
+    "postinstall": "pnpm exec playwright install chrome"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^3.0.1",
