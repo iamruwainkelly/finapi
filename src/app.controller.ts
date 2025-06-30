@@ -678,20 +678,24 @@ export class AppController {
   async scrape(): Promise<object> {
     const browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: true,
+      headless: false, // set to true if you want to run in headless mode
       viewport: null,
     });
     // const context = await browser.newContext(contextOptions);
     const page = await browser.newPage();
 
     // intialize the page and store any cookies for the next request
-    await page.goto('https://etfdb.com', {
+    await page.goto('https://www.wsj.com/market-data/quotes/index/XX/SX5P', {
       waitUntil: 'domcontentloaded',
     });
 
-    // sleep logic for  3 seconds
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // sleep logic for  5 seconds
+    //await new Promise((resolve) => setTimeout(resolve, 5000));
 
+    const content = await page.content();
+
+    // *********************************
+    /*
     const BASE_URL =
       'https://etfdb.com/data_set/?tm=92882&no_null_sort=true&count_by_id=&sort=symbol&order=asc&offset=';
 
@@ -739,14 +743,14 @@ export class AppController {
 
     await browser.close();
 
-    // Optional: Save to JSON file
-    fs.writeFileSync('etfs.json', JSON.stringify(allRows, null, 2));
-    console.log(`📁 Saved to etfs.json`);
+    */
+
+    // Optional: Save to file
+    fs.writeFileSync('scrape.html', content);
 
     // Return the scraped data
     return {
-      message: `Scraped ${allRows.length} ETF records.`,
-      data: allRows,
+      message: `Scraped ${content.length} ETF records.`,
     };
   }
 

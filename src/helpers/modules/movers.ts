@@ -1,5 +1,6 @@
 import { MarketMover } from 'src/typings/MarketMover';
 import { Stock } from 'src/typings/Stock';
+import * as cheerio from 'cheerio';
 
 // Helper to flatten and extract all stocks
 export function extractStocks(data: any): Stock[] {
@@ -42,10 +43,38 @@ export function getTopMovers(
     }));
 }
 
-// Example usage (uncomment for CLI/test):
-// const data: MarketMoversData = JSON.parse(fs.readFileSync('a.json', 'utf-8'));
-// const stocks = extractStocks(data);
-// console.log('\nTop Gainers:');
-// console.table(getTopMovers(stocks, 'Up'));
-// console.log('\nTop Losers:');
-// console.table(getTopMovers(stocks, 'Down'));
+export function parseTable(html: string, tableSelector: string): MarketMover[] {
+  const $ = cheerio.load(html);
+  const rows = $(`${tableSelector} table tbody tr`);
+  const data: MarketMover[] = [];
+  rows.each((_, row) => {
+    const $row = $(row);
+    const tickerLink = $row.find('a[data-test="gainers-losers-url"]');
+    const ticker = tickerLink.find('span.font-semibold').first().text().trim();
+    const tickerName = tickerLink
+      .find('[data-test="gainers-losers-label"]')
+      .text()
+      .trim();
+    const price = $row
+      .find('[data-test="gainers-losers-last"]')
+      .text()
+      .replace(/,/g, '')
+      .trim();
+    const changeSpans = $row.find('[data-test="gainers-losers-change"] span');
+    let priceChange = '',
+      percentChange = '';
+    if (changeSpans.length === 2) {
+      priceChange = $(changeSpans[0]).text().trim();
+      percentChange = $(changeSpans[1]).text().replace(/[()]/g, '').trim();
+    }
+
+    let mover = {} as MarketMover;
+    mover.symbol = ticker;
+    mover.name = tickerName;
+    mover.price = parseFloat(price);
+    mover.change = parseFloat(priceChange.replace(/[^0-9.-]+/g, ''));
+    mover.changePercent = percentChange.replace(/[^0-9.-]+/g, '');
+    data.push(mover);
+  });
+  return data;
+}

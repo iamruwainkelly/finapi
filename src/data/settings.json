@@ -10,5 +10,9 @@
   {
     "key": "CRON_INDEX_QUOTE_INTERVAL",
     "value": "1"
+  },
+  {
+    "key": "SCRAPER",
+    "value": "BROWSERLESS"
   }
 ]

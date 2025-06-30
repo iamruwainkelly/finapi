@@ -1,11 +1,11 @@
-import { Module } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { CacheModule } from "@nestjs/cache-manager";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
-import { HistoryModule } from "./helpers/modules/history";
-import { QuoteModule } from "./helpers/modules/quote";
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { CacheModule } from '@nestjs/cache-manager';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { HistoryModule } from './helpers/modules/history';
+import { QuoteModule } from './helpers/modules/quote';
 
 @Module({
   imports: [
@@ -16,12 +16,12 @@ import { QuoteModule } from "./helpers/modules/quote";
       ttl: 60 * 15 * 1000,
     }),
     TypeOrmModule.forRoot({
-      type: "better-sqlite3",
+      type: 'better-sqlite3',
 
       // im-memory
-      database: ":memory:",
-      // database: "./src/data/data.db",
-      entities: [__dirname + "/**/*.entity{.ts,.js}"],
+      //database: ":memory:",
+      database: './data.db',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
   ],
@@ -35,10 +35,10 @@ export class AppModule {
       this.dataSource
         .initialize()
         .then(() => {
-          console.log("Data Source has been initialized!");
+          console.log('Data Source has been initialized!');
         })
         .catch((err) => {
-          console.error("Error during Data Source initialization", err);
+          console.error('Error during Data Source initialization', err);
         });
     }
   }

@@ -1,3 +1,8 @@
+interface MarketMovers {
+  gainers: MarketMover[];
+  losers: MarketMover[];
+}
+
 import { Index } from './entities/index.entity';
 // stock
 import { Stock } from './entities/stock.entity';
@@ -16,14 +21,22 @@ import { Setting } from './entities/setting.entity';
 import { Etf } from './entities/etf.entity';
 
 import { BrowserContext, chromium, ChromiumBrowser } from 'patchright';
-import { MarketMover } from './entities/marketMover.entity';
+import { MarketMover as MarketMoverEntity } from './entities/marketMover.entity';
+
+// MarketMover entity
+import { MarketMover } from './typings/MarketMover';
+
 import { News } from './entities/news.entity';
 
 import { Logger as TypeOrmLogger } from 'typeorm';
 
 import { LogEntry } from './entities/logentry.entity';
 
-import { extractStocks, getTopMovers } from './helpers/modules/movers';
+import {
+  extractStocks,
+  getTopMovers,
+  parseTable,
+} from './helpers/modules/movers';
 import { Etf as EtfInterface } from './typings/Etf';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { parse as csvParse } from 'csv-parse';
@@ -32,6 +45,7 @@ import yahooFinance from 'yahoo-finance2';
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
 import { YahooQuote } from './typings/YahooQuote';
+import { Console } from 'node:console';
 
 export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
@@ -142,9 +156,21 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       //   context: 'getStocksFromWikipedia',
       // });
 
+      console.log(
+        `Fetching data from Wikipedia: ${url} using table CSS path: ${tableCssPath}`,
+      );
+
+      return [];
+
       // Fetch the HTML content from the URL
-      const response = await axios.get(url);
+      const response = await axios.get(url).catch((error) => {
+        console.error('Failed to fetch HTML content:', error.message);
+        return { status: 500, data: '' };
+      });
+
       const html = response.data;
+
+      console.log(`Fetched HTML content from ${url} successfully.`);
 
       // Load the HTML into Cheerio
       const $ = cheerio.load(html);
@@ -275,6 +301,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       return setting;
     });
 
+    console.log(settingsToCreateEntities);
+
     await settingsRepository.save(settingsToCreateEntities);
   };
 
@@ -332,6 +360,10 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     // loop through each index and if the stockListSourceType is 'csv', fetch the CSV and save the stocks to the database
     for (const jsonIndex of IndexesJsonData) {
+      console.log(
+        `Initializing stocks for index: ${jsonIndex.yahooFinanceSymbol}`,
+      );
+
       const stockConfig = jsonIndex.stockConfig;
 
       // verify that stocks have already been fetched for this index
@@ -591,6 +623,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       console.log(`Fetching quote for index: ${index.symbol}`);
       // sleep for 3 seconds to avoid hitting the API too quickly
       await new Promise((resolve) => setTimeout(resolve, 3000));
+      console.log(
+        `Fetching quote for index: ${index.symbol} from quote module.`,
+      );
       const quote = await this.quoteModule.quote(index.symbol);
       console.log(`Quote for index ${index.symbol} fetched successfully.`);
       quotes.push(quote);
@@ -612,7 +647,39 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getIndexGainersAndLosers(symbol: string): Promise<object> {
+  // func getIndexGainersAndLosers
+  async getIndexGainersAndLosers(symbol: string): Promise<MarketMovers> {
+    // get settings from the database
+    const settingsRepository = this.dataSource.getRepository(Setting);
+    const settings = await settingsRepository.find();
+
+    console.log(settings.map((setting) => `${setting.key}: ${setting.value}`));
+
+    // Check the SCRAPER key in settings
+    const scraperSetting = settings.find(
+      (setting) => setting.key === 'SCRAPER',
+    );
+
+    let marketMovers = null;
+
+    switch (scraperSetting?.value) {
+      case 'BROWSERLESS':
+        // Use Browserless to scrape the data
+        marketMovers = await this.getIndexGainersAndLosersBrowserless(symbol);
+        break;
+      case 'PLAYWRIGHT':
+      default:
+        // Use Playwright to scrape the data
+        marketMovers = await this.getIndexGainersAndLosersPlaywright(symbol);
+        break;
+    }
+
+    return marketMovers;
+  }
+
+  async getIndexGainersAndLosersPlaywright(
+    symbol: string,
+  ): Promise<MarketMovers> {
     // check if the index is valid
     const indexRepository = this.dataSource.getRepository(Index);
     const index = await indexRepository.findOne({
@@ -630,6 +697,13 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     const content = await page.content();
     await page.close();
+
+    // save the content to a file for debugging purposes
+    const outputPath = path.join(
+      './output',
+      `${index.symbol.replaceAll('^', '')}-gainers-and-losers-playwright.html`,
+    );
+    fs.writeFileSync(outputPath, content, 'utf-8');
 
     // load the content into cheerio
     const $ = cheerio.load(content);
@@ -651,8 +725,91 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  async getIndexGainersAndLosersBrowserless(
+    symbol: string,
+  ): Promise<MarketMovers> {
+    // check if the index is valid
+    const indexRepository = this.dataSource.getRepository(Index);
+    const index = await indexRepository.findOne({
+      where: { symbol: symbol },
+    });
+
+    if (!index) {
+      throw new Error(`Index ${index} not found in the database.`);
+    }
+
+    // fetch the market movers from investing.com
+    const endpoint =
+      process.env.BROWSERLESS_ENDPOINT ||
+      'https://production-sfo.browserless.io/chromium/bql';
+    const token = process.env.BROWSERLESS_API_KEY;
+    if (!token) {
+      throw new Error('BROWSERLESS_API_KEY environment variable is not set.');
+    }
+    const url = `https://za.investing.com/indices/${index.investingUrlName}`;
+
+    const proxyString = '&proxy=residential&proxyCountry=us';
+    const optionsString =
+      '&humanlike=true&adBlock=true&blockConsentModals=true';
+    const browserlessUrl = `${endpoint}?token=${token}${proxyString}${optionsString}`;
+
+    const response = await fetch(browserlessUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+      mutation GetContent($url: String!) {
+
+        # to save bandwidth, you can use this reject function
+        reject(type: [image, media, font, stylesheet]) {
+            enabled
+            time
+        }      
+
+        goto(url: $url, waitUntil: firstContentfulPaint) {
+            status
+        }
+
+        # export cleaned HTML with numerous options
+        html(clean: {
+            # removeNonTextNodes: true
+        }) {
+            html
+        }
+      }
+      `,
+        variables: {
+          url: url,
+        },
+      }),
+    });
+
+    const responseJson = await response.json();
+
+    // save the content to a file for debugging purposes
+    const outputPath = path.join(
+      './output',
+      `${index.symbol.replaceAll('^', '')}-gainers-and-losers-browserless.json`,
+    );
+    fs.writeFileSync(outputPath, JSON.stringify(responseJson, null, 2), 'utf8');
+
+    const htmlContent = responseJson.data.html.html;
+
+    const gainers = parseTable(htmlContent, '[data-test="gainers-table"]');
+    const losers = parseTable(htmlContent, '[data-test="losers-table"]');
+
+    const marketMovers: MarketMovers = {
+      gainers: gainers,
+      losers: losers,
+    };
+
+    // return the GainersAndLosers object
+    return marketMovers;
+  }
+
   // create function 'getIndexMarketMovers' to get market-movers for each index
-  // use puppeteer to scrape the data from investing.com
   async getIndexMarketMovers(): Promise<void> {
     // get all indexes from the database
     const indexes = await this.dataSource
@@ -663,7 +820,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // loop through each index and fetch the market movers
     for (const index of indexes) {
       // check if the index has any market movers
-      const marketMoverRepository = this.dataSource.getRepository(MarketMover);
+      const marketMoverRepository =
+        this.dataSource.getRepository(MarketMoverEntity);
       const existingMarketMovers = await marketMoverRepository.findOne({
         where: { symbol: index.symbol },
       });
@@ -702,32 +860,26 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         });
       }
 
-      // let GainersAndLosers: GainersAndLosers = {
-      //   gainers: [],
-      //   losers: [],
-      // };
-
       if (refetch) {
-        //GainersAndLosers = await this.getIndexGainersAndLosers(index.symbol);
         const gainersAndLosers = await this.getIndexGainersAndLosers(
           index.symbol,
         );
+
+        console.log(`Fetching market movers for index: ${index.symbol}`);
+        console.log(`Gainers: ${JSON.stringify(gainersAndLosers.gainers)}`);
+        console.log(`Losers: ${JSON.stringify(gainersAndLosers.losers)}`);
+        // log the success message
 
         // delete all existing market movers for this index
         await marketMoverRepository.delete({ symbol: index.symbol });
 
         // save the market movers to the database
         // save the GainersAndLosers to the json field of the MarketMover entity
-        const marketMover = new MarketMover();
+        const marketMover = new MarketMoverEntity();
         marketMover.symbol = index.symbol;
         marketMover.json = JSON.stringify(gainersAndLosers);
         marketMover.created = new Date().getTime();
         await marketMoverRepository.save(marketMover);
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `Market movers for index ${index.symbol} saved successfully.`,
-          context: 'getIndexMarketMovers',
-        });
       }
     }
 
@@ -845,9 +997,13 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: true,
+      headless: false, // Set to false if you want to see the browser
       viewport: null,
     });
+
+    console.log('Initializing settings data...');
+    await this.initializeSettingsData();
+    console.log('Settings data initialized.');
 
     console.log('Initializing index data...');
     await this.initializeIndexData();
