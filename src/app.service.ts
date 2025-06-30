@@ -1001,6 +1001,12 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       viewport: null,
     });
 
+    // create output directory if it doesn't exist
+    const outputDir = path.join('./output');
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
     console.log('Initializing settings data...');
     await this.initializeSettingsData();
     console.log('Settings data initialized.');
