@@ -845,7 +845,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: false,
+      headless: true,
       viewport: null,
     });
 

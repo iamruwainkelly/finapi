@@ -676,10 +676,9 @@ export class AppController {
   @ApiExcludeEndpoint()
   @Get('scrape')
   async scrape(): Promise<object> {
-    // options.headless = false; // run in headless mode
     const browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: false,
+      headless: true,
       viewport: null,
     });
     // const context = await browser.newContext(contextOptions);
