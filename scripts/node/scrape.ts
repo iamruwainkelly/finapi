@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 const fetch = async () => {
   const browser = await chromium.launchPersistentContext('./browser', {
     channel: 'chrome',
-    headless: false, // set to true if you want to run in headless mode
+    headless: true, // set to true if you want to run in headless mode
     viewport: null,
   });
 

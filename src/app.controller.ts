@@ -678,7 +678,7 @@ export class AppController {
   async scrape(): Promise<object> {
     const browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: false, // set to true if you want to run in headless mode
+      headless: true, // set to true if you want to run in headless mode
       viewport: null,
     });
     // const context = await browser.newContext(contextOptions);
