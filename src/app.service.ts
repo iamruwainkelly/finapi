@@ -44,7 +44,7 @@ import yahooFinance from 'yahoo-finance2';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
-import { YahooQuote } from './typings/YahooQuote';
+import { YahooQuote, YahooQuoteMinimal } from './typings/YahooQuote';
 import { Console } from 'node:console';
 
 export class DatabaseLogger implements TypeOrmLogger {
@@ -90,7 +90,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   private browser: BrowserContext;
 
   constructor(
-    // @InjectRepository(Index)
     private dataSource: DataSource,
     private historyModule: HistoryModule,
     private quoteModule: QuoteModule,
@@ -150,17 +149,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     mapping: SymbolMapping,
   ): Promise<MarketSymbol[]> {
     try {
-      // this.dataSource.getRepository(LogEntry).save({
-      //   level: 'info',
-      //   message: 'Fetching data from Wikipedia: ' + url,
-      //   context: 'getStocksFromWikipedia',
-      // });
-
-      console.log(
-        `Fetching data from Wikipedia: ${url} using table CSS path: ${tableCssPath}`,
-      );
-
-      return [];
+      // return [];
 
       // Fetch the HTML content from the URL
       const response = await axios.get(url).catch((error) => {
@@ -169,8 +158,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       });
 
       const html = response.data;
-
-      console.log(`Fetched HTML content from ${url} successfully.`);
 
       // Load the HTML into Cheerio
       const $ = cheerio.load(html);
@@ -226,7 +213,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // execute the method dynamically
     const method = (this as any)[cron.method];
     if (typeof method === 'function') {
-      console.log(`Running cron: ${cron.name} with method: ${cron.method}`);
+      await method.call(this);
 
       await method.call(this);
 
@@ -301,8 +288,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       return setting;
     });
 
-    console.log(settingsToCreateEntities);
-
     await settingsRepository.save(settingsToCreateEntities);
   };
 
@@ -360,10 +345,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     // loop through each index and if the stockListSourceType is 'csv', fetch the CSV and save the stocks to the database
     for (const jsonIndex of IndexesJsonData) {
-      console.log(
-        `Initializing stocks for index: ${jsonIndex.yahooFinanceSymbol}`,
-      );
-
       const stockConfig = jsonIndex.stockConfig;
 
       // verify that stocks have already been fetched for this index
@@ -609,7 +590,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   };
 
-  async getIndexQuotes(): Promise<YahooQuote[]> {
+  async getIndexQuotes(): Promise<YahooQuoteMinimal[]> {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
@@ -617,17 +598,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       .getMany();
 
     // loop each index and perform a quoteCombine for each index
-    const quotes: YahooQuote[] = [];
+    const quotes: YahooQuoteMinimal[] = [];
 
     for (const index of indexes) {
-      console.log(`Fetching quote for index: ${index.symbol}`);
       // sleep for 3 seconds to avoid hitting the API too quickly
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      console.log(
-        `Fetching quote for index: ${index.symbol} from quote module.`,
-      );
+
       const quote = await this.quoteModule.quote(index.symbol);
-      console.log(`Quote for index ${index.symbol} fetched successfully.`);
+
       quotes.push(quote);
     }
 
@@ -652,8 +630,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // get settings from the database
     const settingsRepository = this.dataSource.getRepository(Setting);
     const settings = await settingsRepository.find();
-
-    console.log(settings.map((setting) => `${setting.key}: ${setting.value}`));
 
     // Check the SCRAPER key in settings
     const scraperSetting = settings.find(
@@ -865,11 +841,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
           index.symbol,
         );
 
-        console.log(`Fetching market movers for index: ${index.symbol}`);
-        console.log(`Gainers: ${JSON.stringify(gainersAndLosers.gainers)}`);
-        console.log(`Losers: ${JSON.stringify(gainersAndLosers.losers)}`);
-        // log the success message
-
         // delete all existing market movers for this index
         await marketMoverRepository.delete({ symbol: index.symbol });
 
@@ -945,7 +916,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
           context: 'getIndexNews',
         });
 
-        console.log(`Fetching news for index: ${index.symbol}`);
         const result = await yahooFinance.search(index.symbol);
 
         // first delete all existing news for this index
@@ -997,7 +967,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: true, // Set to false if you want to see the browser
+      headless: false, // Set to false if you want to see the browser
       viewport: null,
     });
 
@@ -1007,25 +977,15 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    console.log('Initializing settings data...');
     await this.initializeSettingsData();
-    console.log('Settings data initialized.');
 
-    console.log('Initializing index data...');
     await this.initializeIndexData();
-    console.log('Index data initialized.');
 
-    console.log('Initializing index stock data...');
     await this.initializeIndexStockData();
-    console.log('Index stock data initialized.');
 
-    console.log('Initializing ETF data...');
     await this.initializeEtfData();
-    console.log('ETF data initialized.');
 
-    console.log('Initializing settings data...');
     await this.initializeCronJobs();
-    console.log('Cron jobs initialized.');
   }
 
   async onModuleDestroy() {

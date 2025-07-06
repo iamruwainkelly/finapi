@@ -26,7 +26,6 @@ async function exampleRiskMetrics() {
 
   // Calculate risk metrics for AAPL vs SPY
   const result = metrics(aaplReturns, spyReturns);
-  console.log('AAPL Risk Metrics vs SPY:', result);
 }
 
 exampleRiskMetrics();

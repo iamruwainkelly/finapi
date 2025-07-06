@@ -3,19 +3,19 @@ export interface ChangeAndChangePercent {
   changePercent: number | undefined;
 }
 
-export interface Performance {
-  oneDay: ChangeAndChangePercent | undefined;
-  fiveDays: ChangeAndChangePercent | undefined;
-  oneMonth: ChangeAndChangePercent | undefined;
-  threeMonths: ChangeAndChangePercent | undefined;
-  sixMonths: ChangeAndChangePercent | undefined;
-  oneYear: ChangeAndChangePercent | undefined;
-  threeYears: ChangeAndChangePercent | undefined;
-  fiveYears: ChangeAndChangePercent | undefined;
-  yearToDate: ChangeAndChangePercent | undefined;
+export interface PerformanceTimeFrames {
+  d1: ChangeAndChangePercent | undefined;
+  d5: ChangeAndChangePercent | undefined;
+  m1: ChangeAndChangePercent | undefined;
+  m3: ChangeAndChangePercent | undefined;
+  m6: ChangeAndChangePercent | undefined;
+  y1: ChangeAndChangePercent | undefined;
+  y3: ChangeAndChangePercent | undefined;
+  y5: ChangeAndChangePercent | undefined;
+  ytd: ChangeAndChangePercent | undefined;
 }
 
 export interface SymbolPerformance {
   symbol: string;
-  performance: Performance;
+  performance: PerformanceTimeFrames;
 }

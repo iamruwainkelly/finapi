@@ -3,7 +3,7 @@
     "name": "INDEX_QUOTE_INTERVAL",
     "method": "getIndexQuotes",
     "description": "Fetches index quotes at regular intervals",
-    "interval": 1,
+    "interval": 5,
     "enabled": true
   },
   {

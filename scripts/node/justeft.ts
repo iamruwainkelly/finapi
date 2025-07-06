@@ -316,12 +316,6 @@ const main = async () => {
     },
   );
 
-  // print status code and headers
-  //console.log('Status Code:', response.status);
-  //console.log('Headers:', response.headers);
-
-  //console.log('Response Data:', response.data);
-
   const __dirname = process.cwd();
 
   // write the response to a file in same directory

@@ -23,7 +23,6 @@ const fetch = async () => {
   // save html to file
 
   fs.writeFileSync('scrape.html', content);
-  console.log('HTML content saved to scrape.html');
 };
 
 fetch()

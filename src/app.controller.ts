@@ -16,9 +16,10 @@ import { Index } from './entities/index.entity';
 import { LogEntry } from './entities/logentry.entity';
 
 import { DataSource } from 'typeorm';
-import { PerformanceDays } from './typings/PerformanceDats';
+import { PerformanceDays } from './typings/PerformanceDays';
 import {
   ChangeAndChangePercent,
+  PerformanceTimeFrames,
   SymbolPerformance,
 } from './typings/IndexPerformance';
 import { Quote } from './typings/Quote';
@@ -34,16 +35,17 @@ import { getMetrics } from './helpers/modules/metrics';
 import { Metrics } from './typings/Metrics';
 import { QuoteSummaryResult } from 'yahoo-finance2/dist/esm/src/modules/quoteSummary-iface';
 import { Etf } from './entities/etf.entity';
-import { YahooQuote } from './typings/YahooQuote';
+import { YahooQuoteMinimal } from './typings/YahooQuote';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
+import { HistoryMinimal } from './typings/HistoryMinimal';
 
 interface PeerResult {
   symbol: string;
   price: number | undefined;
   performance: SymbolPerformance;
-  history: History[];
+  history: HistoryMinimal[];
 }
 
 // create a function to calculate the change in price between two dates
@@ -146,7 +148,7 @@ export class AppController {
     days: number,
   ): Promise<ChangeAndChangePercent> {
     // get history from the database, where symbol is the same as params.symbol
-    const history = await this.history(symbol);
+    const history = await this.historyModule.history(symbol);
 
     // Sort history by date in ascending order
     history.sort((a, b) => a.date - b.date);
@@ -214,7 +216,7 @@ export class AppController {
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
     try {
-      const history = await this.history(ticker);
+      const history = await this.historyModule.history(ticker);
 
       // find the first record in history where the date is greater than or equal to yearStart
       const historical = history.filter(
@@ -313,7 +315,7 @@ export class AppController {
     // get metrics for the stock
     const metrics: Metrics = await getMetrics(symbol);
     // get historic data for the stock
-    const history = await this.history(symbol);
+    const history = await this.historyModule.history(symbol);
 
     const peRatio = quoteSummary.summaryDetail?.trailingPE;
     const pbRatio = quoteSummary.defaultKeyStatistics?.priceToBook;
@@ -447,50 +449,49 @@ export class AppController {
         expectedShortFall: -7.85,
         maxDrawDown: -18.4,
       },
-      priceHistory: history,
+      priceHistory: this.historyModule.convertToMinimal(history),
     };
 
     return results;
   }
 
   @Get('quote/:symbol')
-  async quote(@Param('symbol') symbol: string): Promise<YahooQuote> {
-    console.log(`Fetching .quote for ${symbol}...`);
+  async quote(@Param('symbol') symbol: string): Promise<YahooQuoteMinimal> {
     return this.quoteModule.quote(symbol);
   }
 
   // create non-endpoint function that return the day for various typed timeframes
-  // 1d, 5d, 1mo, 3mo, 6mo, 1y, 3yr, 5yr
+  // d1, d5, m1, m3, m6, y1, y3, y5
   // use setX methods to set the hours, minutes, seconds and milliseconds to 0
   private getPastDate(
-    timeframe: '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '3yr' | '5yr',
+    timeframe: 'd1' | 'd5' | 'm1' | 'm3' | 'm6' | 'y1' | 'y3' | 'y5',
   ): Date {
     let date = new Date();
     date.setHours(0, 0, 0, 0);
 
     switch (timeframe) {
-      case '1d':
+      case 'd1':
         date.setDate(date.getDate() - 1);
         break;
-      case '5d':
+      case 'd5':
         date.setDate(date.getDate() - 5);
         break;
-      case '1mo':
+      case 'm1':
         date.setMonth(date.getMonth() - 1);
         break;
-      case '3mo':
+      case 'm3':
         date.setMonth(date.getMonth() - 3);
         break;
-      case '6mo':
+      case 'm6':
         date.setMonth(date.getMonth() - 6);
         break;
-      case '1y':
+      case 'y1':
         date.setFullYear(date.getFullYear() - 1);
         break;
-      case '3yr':
+      case 'y3':
         date.setFullYear(date.getFullYear() - 3);
         break;
-      case '5yr':
+      case 'y5':
         date.setFullYear(date.getFullYear() - 5);
         break;
       default:
@@ -505,44 +506,41 @@ export class AppController {
     @Param('symbol') symbol: string,
   ): Promise<SymbolPerformance> {
     // get history from the database, where symbol is the same as symbol param
-    const history = await this.history(symbol);
+    const history = await this.historyModule.history(symbol);
 
     // create object array for different time periods
     const timeframes = [
       {
-        name: '5d',
-        jsonName: 'fiveDays',
+        name: 'd1',
         startDay: new Date(history[history.length - 5]?.date ?? Date.now()),
       },
       {
-        name: '1mo',
-        jsonName: 'oneMonth',
-        startDay: this.getPastDate('1mo'),
+        name: 'd5',
+        startDay: this.getPastDate('d5'),
       },
       {
-        name: '3mo',
-        jsonName: 'threeMonths',
-        startDay: this.getPastDate('3mo'),
+        name: 'm1',
+        startDay: this.getPastDate('m1'),
       },
       {
-        name: '6mo',
-        jsonName: 'sixMonths',
-        startDay: this.getPastDate('6mo'),
+        name: 'm3',
+        startDay: this.getPastDate('m3'),
       },
       {
-        name: '1y',
-        jsonName: 'oneYear',
-        startDay: this.getPastDate('1y'),
+        name: 'm6',
+        startDay: this.getPastDate('m6'),
       },
       {
-        name: '3yr',
-        jsonName: 'threeYears',
-        startDay: this.getPastDate('3yr'),
+        name: 'y1',
+        startDay: this.getPastDate('y1'),
       },
       {
-        name: '5yr',
-        jsonName: 'fiveYears',
-        startDay: this.getPastDate('5yr'),
+        name: 'y3',
+        startDay: this.getPastDate('y3'),
+      },
+      {
+        name: 'y5',
+        startDay: this.getPastDate('y5'),
       },
     ];
 
@@ -558,31 +556,34 @@ export class AppController {
 
     // obtain current price
     const currentQuote = await this.quote(symbol);
+
     const oneDay: ChangeAndChangePercent = {
       change: currentQuote.regularMarketChange,
       changePercent: currentQuote.regularMarketChangePercent,
     };
 
-    // calculate year to date performance
-    const ytdData = await this.calculateYTD(symbol);
+    // todo
+    const ytdData = {
+      change: 0, // Placeholder, replace with actual YTD calculation
+      changePercent: 0, // Placeholder, replace with actual YTD calculation
+    };
 
-    // return instance of IndexPerformance
+    const performance: PerformanceTimeFrames = {
+      d1: oneDay,
+      d5: performanceData.find((d) => d.period === 'd5')?.data,
+      m1: performanceData.find((d) => d.period === 'm1')?.data,
+      m3: performanceData.find((d) => d.period === 'm3')?.data,
+      m6: performanceData.find((d) => d.period === 'm6')?.data,
+      y1: performanceData.find((d) => d.period === 'y1')?.data,
+      y3: performanceData.find((d) => d.period === 'y3')?.data,
+      y5: performanceData.find((d) => d.period === 'y5')?.data,
+      ytd: ytdData,
+    };
+
+    // return the performance object
     return {
       symbol: symbol.toUpperCase(),
-      performance: {
-        oneDay: oneDay,
-        fiveDays: performanceData.find((d) => d.period === '5d')?.data,
-        oneMonth: performanceData.find((d) => d.period === '1mo')?.data,
-        threeMonths: performanceData.find((d) => d.period === '3mo')?.data,
-        sixMonths: performanceData.find((d) => d.period === '6mo')?.data,
-        oneYear: performanceData.find((d) => d.period === '1y')?.data,
-        threeYears: performanceData.find((d) => d.period === '3yr')?.data,
-        fiveYears: performanceData.find((d) => d.period === '5yr')?.data,
-        yearToDate: {
-          change: ytdData ? ytdData.ytdChange : undefined,
-          changePercent: ytdData ? ytdData.ytdChangePercent : undefined,
-        },
-      },
+      performance: performance,
     };
   }
 
@@ -678,72 +679,18 @@ export class AppController {
   async scrape(): Promise<object> {
     const browser = await chromium.launchPersistentContext('./browser', {
       channel: 'chrome',
-      headless: true, // set to true if you want to run in headless mode
+      headless: false, // set to true if you want to run in headless mode
       viewport: null,
     });
     // const context = await browser.newContext(contextOptions);
     const page = await browser.newPage();
 
     // intialize the page and store any cookies for the next request
-    await page.goto('https://www.wsj.com/market-data/quotes/index/XX/SX5P', {
+    await page.goto('https://www.reuters.com/markets/quote/.SSMI/', {
       waitUntil: 'domcontentloaded',
     });
 
-    // sleep logic for  5 seconds
-    //await new Promise((resolve) => setTimeout(resolve, 5000));
-
     const content = await page.content();
-
-    // *********************************
-    /*
-    const BASE_URL =
-      'https://etfdb.com/data_set/?tm=92882&no_null_sort=true&count_by_id=&sort=symbol&order=asc&offset=';
-
-    const allRows = [];
-    let offset = 0;
-    let total = null;
-
-    while (true) {
-      const url = `${BASE_URL}${offset}`;
-      console.log(`Fetching: ${url}`);
-
-      // wait 5 seconds before each request
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-
-      try {
-        await page.goto(url, { waitUntil: 'domcontentloaded' });
-        const content = await page.content();
-
-        // write the content to a file for debugging
-        fs.writeFileSync(`etfdb_page_${offset}.html`, content);
-
-        const data = JSON.parse(content);
-
-        // const data = response.data;
-
-        console.log(`✅ Downloaded ${allRows.length} ETF records.`);
-
-        if (!total) {
-          total = data.total;
-          console.log(`Total records to fetch: ${total}`);
-        }
-
-        const rows = data.rows;
-        if (!rows.length) break;
-
-        allRows.push(...rows);
-        offset += 25;
-
-        if (allRows.length >= total) break;
-      } catch (err) {
-        console.error('Failed to fetch data:', err.message);
-        break;
-      }
-    }
-
-    await browser.close();
-
-    */
 
     // Optional: Save to file
     fs.writeFileSync('scrape.html', content);
@@ -768,6 +715,11 @@ export class AppController {
       .createQueryBuilder('quote')
       .where('quote.symbol = :symbol', { symbol: symbol })
       .getOne();
+
+    // print quote if it exists
+    if (quote) {
+      console.log(`Quote for symbol ${symbol}:`, quote.json);
+    }
 
     // if the quote does not exist, return an error
     if (!quote) {
@@ -874,53 +826,32 @@ export class AppController {
     return dashboardResults;
   }
 
-  @Get('dashboard2')
-  async dashboard2(): Promise<object> {
-    // get indexes from the database
-    const indexes = await this.dataSource
-      .getRepository(Index)
-      .createQueryBuilder('index')
-      .getMany();
+  @Get('dashboard2/:index')
+  async dashboard2(@Param('index') index: string): Promise<object> {
+    // get the quote for the index
+    const quote = await this.quoteModule.quote(index);
 
-    // for each index, get the quote, history, search and market movers
-    const dashboardPromises = [];
-    for (const index of indexes) {
-      dashboardPromises.push(
-        (async () => {
-          // get the quote for the index
-          //const quote = await this.getIndexQuote(index.symbol);
-          const quote = await this.quoteModule.quote(index.symbol);
+    // get the history for the index
+    const performance = await this.getIndexPerformance(index);
 
-          // get the history for the index
-          const performance = await this.getIndexPerformance(index.symbol);
+    //get the news results for the index
+    const news = await this.news(index);
 
-          //get the news results for the index
-          const news = await this.news(index.symbol);
+    // get the market movers for the index
+    const marketMovers = await this.marketMovers(index);
 
-          // get the market movers for the index
-          const marketMovers = await this.marketMovers(index.symbol);
+    // forecast the index
+    const forecast = await this.forecast(index);
 
-          // forecast the index
-          const forecast = await this.forecast(index.symbol);
-
-          // return the dashboard object for the index
-          return {
-            symbol: index.symbol,
-            quote: quote,
-            performance: performance,
-            news: news,
-            marketMovers: marketMovers,
-            forecast: forecast,
-          };
-        })(),
-      );
-    }
-
-    // wait for all promises to resolve
-    const dashboardResults = await Promise.all(dashboardPromises);
-
-    // return the dashboard results
-    return dashboardResults;
+    // return the dashboard object for the index
+    return {
+      symbol: index.toUpperCase(),
+      quote: quote,
+      performance: performance,
+      news: news,
+      marketMovers: marketMovers,
+      forecast: forecast,
+    };
   }
 
   @Get('logs')
@@ -1003,7 +934,7 @@ export class AppController {
     const quote = await yahooFinance.quote(symbol);
 
     // Fetch history from DB, sorted ascending
-    const history = await this.history(symbol);
+    const history = await this.historyModule.history(symbol);
 
     // get performance()
     const performance = await this.performance(symbol);
@@ -1012,13 +943,13 @@ export class AppController {
       symbol,
       price: quote.regularMarketPrice,
       performance,
-      history,
+      history: this.historyModule.convertToMinimal(history),
     };
   }
 
   @Get('history/:symbol')
-  async history(@Param('symbol') symbol: string): Promise<History[]> {
-    return this.historyModule.history(symbol);
+  async history(@Param('symbol') symbol: string): Promise<HistoryMinimal[]> {
+    return this.historyModule.getHistoryMinimal(symbol);
   }
 
   @Get('peer/:symbol')
@@ -1033,7 +964,7 @@ export class AppController {
     }
 
     // get the history for the symbol
-    const history = await this.history(symbol);
+    const history = await this.historyModule.history(symbol);
 
     if (!history || history.length === 0) {
       throw new Error(`History for symbol ${symbol} not found.`);
@@ -1058,16 +989,24 @@ export class AppController {
       throw new Error(`Performance for symbol ${symbol} not found.`);
     }
 
+    // get etf from the database
+    const etf = await this.dataSource
+      .getRepository(Etf)
+      .createQueryBuilder('etf')
+      .where('etf.symbol = :symbol', { symbol: symbol })
+      .getOne();
+
     // return the peer result
     return {
       symbol: symbol.toUpperCase(),
+      name: etf?.name ?? symbol.toUpperCase(),
       exchange: quote.exchange,
       market: quote.market,
       shortName: quote.shortName ?? quote.longName ?? symbol.toUpperCase(),
       longName: quote.longName ?? quote.shortName ?? symbol.toUpperCase(),
       currency: quote.currency ?? 'USD',
       price: quote.regularMarketPrice,
-      history: lastYearHistory,
+      history: this.historyModule.convertToMinimal(lastYearHistory),
       performance: performance.performance,
     };
   }

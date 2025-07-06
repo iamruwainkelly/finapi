@@ -13,6 +13,6 @@
   },
   {
     "key": "SCRAPER",
-    "value": "BROWSERLESS"
+    "value": "PLAYWRIGHT"
   }
 ]

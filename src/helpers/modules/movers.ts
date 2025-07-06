@@ -4,8 +4,6 @@ import * as cheerio from 'cheerio';
 
 // Helper to flatten and extract all stocks
 export function extractStocks(data: any): Stock[] {
-  // console.log()
-
   const stocks: Stock[] = [];
   for (const section of data.props.pageProps.state.quotesStore.quotes) {
     if (

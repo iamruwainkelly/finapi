@@ -1,3 +1,19 @@
+export interface YahooQuoteMinimal {
+  symbol: string;
+  regularMarketPrice: number;
+  regularMarketChange: number;
+  regularMarketChangePercent: number;
+  regularMarketTime: number;
+  currency: string;
+  fiftyTwoWeekLow: number;
+  fiftyTwoWeekHigh: number;
+  exchange: string;
+  market: string;
+  shortName: string;
+  longName: string;
+  marketCap: number;
+}
+
 export interface YahooQuote {
   ask?: number;
   askSize?: number;

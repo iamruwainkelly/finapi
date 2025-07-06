@@ -1,11 +1,42 @@
 import { Quote } from '../../entities/quote.entity';
 import yahooFinance from 'yahoo-finance2';
 import { AppDataSource } from '../../data-source';
-import { YahooQuote } from 'src/typings/YahooQuote';
+import { YahooQuote, YahooQuoteMinimal } from 'src/typings/YahooQuote';
+import { differenceInMinutes } from 'date-fns';
 
 export class QuoteModule {
   constructor() {}
-  async quote(symbol: string): Promise<YahooQuote> {
+
+  async getQuote(symbol: string): Promise<YahooQuoteMinimal> {
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const quote = await AppDataSource.getRepository(Quote)
+      .createQueryBuilder('quote')
+      .where('quote.symbol = :symbol', { symbol })
+      .orderBy('quote.updated', 'DESC')
+      .select([
+        'quote.symbol',
+        'quote.regularMarketPrice',
+        'quote.regularMarketChange',
+        'quote.regularMarketChangePercent',
+        'quote.regularMarketTime',
+        'quote.currency',
+        'quote.fiftyTwoWeekLow',
+        'quote.fiftyTwoWeekHigh',
+        'quote.exchange',
+        'quote.market',
+        'quote.shortName',
+        'quote.longName',
+        'quote.marketCap',
+      ])
+      .getOne();
+
+    return quote as YahooQuoteMinimal;
+  }
+
+  async quote(symbol: string): Promise<YahooQuoteMinimal> {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
@@ -13,85 +44,100 @@ export class QuoteModule {
     // trim the symbol to ensure it is in uppercase
     symbol = symbol.trim().toUpperCase();
 
-    console.log(`Fetching quote for ${symbol}...`);
-
     // get quote from the database, where updated field is not older than 1 minute
     const quote = await AppDataSource.getRepository(Quote)
       .createQueryBuilder('quote')
       .where('quote.symbol = :symbol', { symbol })
       .orderBy('quote.updated', 'DESC')
+      .select([
+        'quote.symbol',
+        'quote.regularMarketPrice',
+        'quote.regularMarketChange',
+        'quote.regularMarketChangePercent',
+        'quote.regularMarketTime',
+        'quote.currency',
+        'quote.fiftyTwoWeekLow',
+        'quote.fiftyTwoWeekHigh',
+        'quote.exchange',
+        'quote.market',
+        'quote.shortName',
+        'quote.longName',
+        'quote.marketCap',
+        'quote.updated',
+      ])
       .getOne();
 
-    console.log(`Quote found in database: ${quote ? 'Yes' : 'No'}`);
+    // get current date and time in getTime format
+    const currentTime = new Date();
 
-    // if the record exists and is not older than 1 minute, return it
-    if (quote && quote.updated) {
-      // quote
-      console.log(
-        `Quote for ${quote.updated} found in database, checking if it's fresh...`,
-      );
-
-      const now = new Date();
+    // if there is a quote, check the last entry and see if that entry created date is older than one minute
+    if (quote) {
       const lastUpdated = new Date(quote.updated);
-      const diff = Math.abs(now.getTime() - lastUpdated.getTime());
-      const diffMinutes = Math.ceil(diff / (1000 * 60));
+      const diffMinutes = differenceInMinutes(currentTime, lastUpdated);
 
-      if (diffMinutes <= 1) {
-        console.log(
-          `Quote for ${symbol} is fresh (updated ${diffMinutes} minute(s) ago), returning cached data...`,
-        );
-
-        return quote;
-
-        // return quote.json as YahooQuote;
-      }
-    } else {
-      console.log(`Fetching quote for ${symbol} from Yahoo Finance...`);
-      // const json = await yahooFinance.quote(symbol);
-
-      console.log(
-        `Quote for ${symbol} is older than 1 minute, fetching fresh data...`,
-      );
-
-      // if the record does not exist, retrieve it
-      if (!quote) {
-        console.log(
-          `Quote for ${symbol} not found in database, fetching from Yahoo Finance...`,
-        );
-
-        // sleep for 2 seconds to avoid hitting the API too quickly
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        console.log(`Fetching quote for ${symbol} from Yahoo Finance...`);
-        const json = await yahooFinance.quote(symbol);
+      if (diffMinutes < 5) {
+        return quote as YahooQuoteMinimal;
+      } else {
+        // if the quote is stale, fetch new data
+        // fetch new data from Yahoo Finance
+        console.log(`[UPD] Fetching quote for ${symbol} from Yahoo Finance...`);
+        const yahooQuote = await yahooFinance.quote(symbol);
 
         const now = new Date();
-        const newQuote = new Quote();
-        newQuote.symbol = symbol;
-        newQuote.json = json;
-        newQuote.created = now.getTime();
-        newQuote.createdString = now.toISOString();
-        newQuote.updated = now.getTime();
-        newQuote.updatedString = now.toISOString();
-        await AppDataSource.getRepository(Quote).save(newQuote);
-        return newQuote.json as YahooQuote;
+
+        // update the quote in the database
+        await AppDataSource.getRepository(Quote).update(
+          { symbol: symbol },
+          {
+            // json: yahooQuote,
+            regularMarketPrice: yahooQuote.regularMarketPrice,
+            regularMarketChange: yahooQuote.regularMarketChange,
+            regularMarketChangePercent: yahooQuote.regularMarketChangePercent,
+            regularMarketTime: yahooQuote.regularMarketTime?.getTime(),
+            currency: yahooQuote.currency,
+            fiftyTwoWeekLow: yahooQuote.fiftyTwoWeekLow,
+            fiftyTwoWeekHigh: yahooQuote.fiftyTwoWeekHigh,
+            exchange: yahooQuote.exchange,
+            market: yahooQuote.market,
+            shortName: yahooQuote.shortName,
+            longName: yahooQuote.longName,
+            updated: now.getTime(),
+            updatedString: now.toISOString(),
+          },
+        );
+
+        // return the updated quote
+        return this.getQuote(symbol);
       }
-
-      console.log(
-        `Quote for ${symbol} found in database, updating it with fresh data...`,
-      );
-      const json = await yahooFinance.quote(symbol);
-
-      // if the record exists, update it
-      const now = new Date();
-      quote.json = json;
-      quote.updated = now.getTime();
-      quote.updatedString = now.toISOString();
-      await AppDataSource.getRepository(Quote).save(quote);
-
-      return quote.json as YahooQuote;
     }
 
-    return quote.json as YahooQuote;
+    console.log(`[INS] Fetching quote for ${symbol} from Yahoo Finance...`);
+    const yahooQuote = await yahooFinance.quote(symbol);
+
+    const now = new Date();
+    const newQuote = new Quote();
+    newQuote.symbol = symbol;
+    newQuote.json = yahooQuote;
+
+    newQuote.regularMarketPrice = yahooQuote.regularMarketPrice;
+    newQuote.regularMarketChange = yahooQuote.regularMarketChange;
+    newQuote.regularMarketChangePercent = yahooQuote.regularMarketChangePercent;
+    newQuote.regularMarketTime = yahooQuote.regularMarketTime?.getTime();
+    newQuote.currency = yahooQuote.currency;
+    newQuote.fiftyTwoWeekLow = yahooQuote.fiftyTwoWeekLow;
+    newQuote.fiftyTwoWeekHigh = yahooQuote.fiftyTwoWeekHigh;
+    newQuote.exchange = yahooQuote.exchange;
+    newQuote.market = yahooQuote.market;
+    newQuote.shortName = yahooQuote.shortName;
+    newQuote.longName = yahooQuote.longName;
+
+    newQuote.created = now.getTime();
+    newQuote.createdString = now.toISOString();
+    newQuote.updated = now.getTime();
+    newQuote.updatedString = now.toISOString();
+    await AppDataSource.getRepository(Quote).save(newQuote);
+
+    // return the updated quote
+    return this.getQuote(symbol);
   }
 }
