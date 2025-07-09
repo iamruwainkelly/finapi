@@ -1,9 +1,8 @@
 import { History } from '../../entities/history.entity';
 import yahooFinance from 'yahoo-finance2';
 import { AppDataSource } from '../../data-source';
-import { differenceInMinutes, toDate, isToday } from 'date-fns';
+import { toDate, isToday } from 'date-fns';
 import { HistoryMinimal } from 'src/typings/HistoryMinimal';
-import { re } from 'mathjs';
 
 export class HistoryModule {
   constructor() {}

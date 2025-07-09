@@ -1,8 +1,8 @@
 import yahooFinance from 'yahoo-finance2';
-import { analysis, metrics } from './risk';
+import { analysis, metrics } from '../../src/helpers/modules/risk';
+// import { metrics } from 'src/helpers/modules/risk';
 
-async function exampleRiskMetrics() {
-  // Download daily close prices for two tickers (e.g., AAPL and SPY)
+(async function () {
   const aaplHistory = await yahooFinance.historical('AAPL', {
     period1: '2023-01-01',
     period2: '2024-01-01',
@@ -25,12 +25,6 @@ async function exampleRiskMetrics() {
   const spyReturns = getReturns(spyPrices);
 
   // Calculate risk metrics for AAPL vs SPY
+  //const result = metrics(aaplReturns, spyReturns);
   const result = analysis('SPY', 'AAPL');
-
-  return result;
-}
-
-(async () => {
-  const results = await exampleRiskMetrics();
-  console.log(results);
 })();

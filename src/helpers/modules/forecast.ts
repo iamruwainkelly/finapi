@@ -1,4 +1,5 @@
-import { HistoryModule } from '../../helpers/modules/history';
+import { HistoryModule } from './history';
+import { ForecastPeriods } from '../../typings/Forecasting';
 
 // Utility: compute standard deviation of an array
 function standardDeviation(arr: number[]): number {
@@ -92,7 +93,7 @@ function getRecommendationLabel(sentiment: string, confidence: number): string {
   return 'Hold';
 }
 
-export async function getMetrics(ticker: string): Promise<any> {
+export async function getForecast(ticker: string): Promise<ForecastPeriods> {
   // history module ts
   const historyModule = new HistoryModule();
   const history = await historyModule.history(ticker);
@@ -117,11 +118,8 @@ export async function getMetrics(ticker: string): Promise<any> {
   }
 
   return {
-    threeMonths:
-      data3m.length > 1 ? clampConfidence(computeMetrics(data3m)) : null,
-    sixMonths:
-      data6m.length > 1 ? clampConfidence(computeMetrics(data6m)) : null,
-    twelveMonths:
-      data12m.length > 1 ? clampConfidence(computeMetrics(data12m)) : null,
+    m3: data3m.length > 1 ? clampConfidence(computeMetrics(data3m)) : null,
+    m6: data6m.length > 1 ? clampConfidence(computeMetrics(data6m)) : null,
+    m12: data12m.length > 1 ? clampConfidence(computeMetrics(data12m)) : null,
   };
 }

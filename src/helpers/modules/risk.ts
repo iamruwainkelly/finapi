@@ -27,6 +27,15 @@ const getReturns = (prices: any[]): number[] => {
   return returns;
 };
 
+const getReturnsForMetrics = (prices: any[]): number[] => {
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) {
+    const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
+    returns.push(ret);
+  }
+  return returns;
+};
+
 const getMomentumExposure = (history: History[]) => {
   if (history.length < 252 + 21) {
     throw new Error('Not enough data to calculate momentum exposure.');
@@ -43,7 +52,7 @@ const getMomentumExposure = (history: History[]) => {
   return momentumExposure;
 };
 
-const analysis = async (index: string, stock: string): Promise<any> => {
+export const analysis = async (index: string, stock: string): Promise<any> => {
   const indexHistory = await historyModule.history(index);
   const stockHistory = await historyModule.history(stock);
 
@@ -158,10 +167,16 @@ const analysis = async (index: string, stock: string): Promise<any> => {
     ]),
   ) as Record<FactorKey, number>;
 
+  // Metrics
+  const stockReturnsForMetrics = getReturnsForMetrics(stockPrices);
+  const marketReturnsForMetrics = getReturnsForMetrics(marketPrices);
+  const riskMetrics = metrics(stockReturnsForMetrics, marketReturnsForMetrics);
+
   // Return an object with the analysis results
   return {
     exposures,
     contributions,
+    riskMetrics,
     contribution_percent,
     exposure_percent,
   };

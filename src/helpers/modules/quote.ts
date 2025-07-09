@@ -30,6 +30,7 @@ export class QuoteModule {
         'quote.shortName',
         'quote.longName',
         'quote.marketCap',
+        'quote.updated',
       ])
       .getOne();
 
@@ -58,6 +59,8 @@ export class QuoteModule {
         'quote.currency',
         'quote.fiftyTwoWeekLow',
         'quote.fiftyTwoWeekHigh',
+        'quote.regularMarketDayLow',
+        'quote.regularMarketDayHigh',
         'quote.exchange',
         'quote.market',
         'quote.shortName',
@@ -101,6 +104,7 @@ export class QuoteModule {
             market: yahooQuote.market,
             shortName: yahooQuote.shortName,
             longName: yahooQuote.longName,
+            marketCap: yahooQuote.marketCap,
             updated: now.getTime(),
             updatedString: now.toISOString(),
           },
@@ -114,6 +118,9 @@ export class QuoteModule {
     console.log(`[INS] Fetching quote for ${symbol} from Yahoo Finance...`);
     const yahooQuote = await yahooFinance.quote(symbol);
 
+    // delete the existing quote if it exists
+    await AppDataSource.getRepository(Quote).delete({ symbol });
+
     const now = new Date();
     const newQuote = new Quote();
     newQuote.symbol = symbol;
@@ -126,10 +133,13 @@ export class QuoteModule {
     newQuote.currency = yahooQuote.currency;
     newQuote.fiftyTwoWeekLow = yahooQuote.fiftyTwoWeekLow;
     newQuote.fiftyTwoWeekHigh = yahooQuote.fiftyTwoWeekHigh;
+    newQuote.regularMarketDayLow = yahooQuote.regularMarketDayLow;
+    newQuote.regularMarketDayHigh = yahooQuote.regularMarketDayHigh;
     newQuote.exchange = yahooQuote.exchange;
     newQuote.market = yahooQuote.market;
     newQuote.shortName = yahooQuote.shortName;
     newQuote.longName = yahooQuote.longName;
+    newQuote.marketCap = yahooQuote.marketCap;
 
     newQuote.created = now.getTime();
     newQuote.createdString = now.toISOString();

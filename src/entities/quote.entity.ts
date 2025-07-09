@@ -40,6 +40,14 @@ export class Quote {
   @Column({ type: 'decimal', nullable: true })
   fiftyTwoWeekHigh: number | undefined;
 
+  // regularMarketDayLow
+  @Column({ type: 'decimal', nullable: true })
+  regularMarketDayLow: number | undefined;
+
+  // regularMarketDayHigh
+  @Column({ type: 'decimal', nullable: true })
+  regularMarketDayHigh: number | undefined;
+
   // exchange
   @Column({ type: 'varchar', nullable: true })
   exchange: string | undefined;

@@ -1,11 +1,5 @@
 // news entity
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  BeforeInsert,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
 
 @Entity()
 export class News {
@@ -15,20 +9,37 @@ export class News {
   @Column()
   symbol: string;
 
+  // @Column({ nullable: true })
+  // json: string;
+
+  // title
   @Column({ nullable: true })
-  json: string;
+  title: string;
+
+  // url
+  @Column({ nullable: true })
+  url: string;
+
+  // image
+  @Column({ nullable: true })
+  imageUrl: string;
+
+  // date
+  @Column({ nullable: true })
+  date: number;
 
   // created is a timestamp in seconds
   @Column()
   created: number;
 
-  @Column()
-  createdAt: string;
+  @Column({ nullable: true })
+  createdString: string;
 
-  @BeforeInsert()
-  setCreatedAt() {
-    if (this.created && !this.createdAt) {
-      this.createdAt = new Date(this.created).toISOString();
-    }
-  }
+  // updated
+  @Column({ nullable: true })
+  updated: number;
+
+  // updatedAt
+  @Column({ nullable: true })
+  updatedString: string;
 }

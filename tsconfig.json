@@ -27,6 +27,8 @@
     "**/*.sqlite",
     "data.db",
     "data.db-journal",
-    "**/*.html"
+    "**/*.html",
+    "/output",
+    "/src/test-scripts"
   ]
 }

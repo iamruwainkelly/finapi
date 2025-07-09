@@ -1,9 +1,6 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { AppService } from './app.service';
 import yahooFinance from 'yahoo-finance2';
-
-import { chromium } from 'patchright';
-
 import * as fs from 'node:fs';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
@@ -31,15 +28,25 @@ import { News } from './entities/news.entity';
 import { Stock } from './entities/stock.entity';
 
 // import metrics.ts
-import { getMetrics } from './helpers/modules/metrics';
-import { Metrics } from './typings/Metrics';
+import { getForecast } from './helpers/modules/forecast';
+import { ForecastPeriods } from './typings/Forecasting';
 import { QuoteSummaryResult } from 'yahoo-finance2/dist/esm/src/modules/quoteSummary-iface';
 import { Etf } from './entities/etf.entity';
 import { YahooQuoteMinimal } from './typings/YahooQuote';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
+import { NewsService } from './helpers/modules/news.service';
+
 import { HistoryMinimal } from './typings/HistoryMinimal';
+import { newPage } from './helpers/browser.singleton';
+// import cheerio
+import * as cheerio from 'cheerio';
+import { NewsItem, ReutersNews } from './typings/ReutersNews';
+import { analysis } from './helpers/modules/risk';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 interface PeerResult {
   symbol: string;
@@ -100,6 +107,7 @@ export class AppController {
     private dataSource: DataSource,
     private historyModule: HistoryModule,
     private quoteModule: QuoteModule,
+    private newsService: NewsService,
   ) {}
 
   // **********************************
@@ -306,14 +314,17 @@ export class AppController {
     };
   }
 
-  @Get('forecast/:symbol')
-  async forecast(@Param('symbol') symbol: string): Promise<object> {
+  @Get('forecast/:index/:symbol')
+  async forecast(
+    @Param('index') index: string,
+    @Param('symbol') symbol: string,
+  ): Promise<object> {
     // get quote for the stock
     const quote = await this.quote(symbol);
     const quoteSummary = await this.quoteSummary(symbol);
 
-    // get metrics for the stock
-    const metrics: Metrics = await getMetrics(symbol);
+    // get forecasts for the stock
+    const forecasts: ForecastPeriods = await getForecast(symbol);
     // get historic data for the stock
     const history = await this.historyModule.history(symbol);
 
@@ -360,6 +371,12 @@ export class AppController {
     // calc Vol/Avg Ratio
     const volumeAverageRatio = (currentVolume ?? 0) / (averageVolume ?? 1);
 
+    // risk analysis
+    let riskAnalysis = null;
+    if (index) {
+      riskAnalysis = await analysis(index, symbol);
+    }
+
     const results = {
       // confidence: randomInt(10, 69), // get for quote
       // confidenceLevelText: 'High Confidence',
@@ -370,8 +387,8 @@ export class AppController {
       // target: 191.07,
       // potential: 5.25,
       quote: quote,
-      quoteSummary: quoteSummary,
-      forecastPeriods: metrics,
+      // quoteSummary: quoteSummary,
+      forecastPeriods: forecasts,
       valuation: {
         peRatio: peRatio,
         pbRatio: pbRatio,
@@ -391,6 +408,7 @@ export class AppController {
       averageVolume: averageVolume,
       volumeAverageRatio: volumeAverageRatio,
       rsi14: rsi14,
+      riskAnalysis: riskAnalysis,
       riskFactorExposures: [
         {
           name: 'Market',
@@ -602,28 +620,35 @@ export class AppController {
     return results;
   }
 
+  // quoteSummary
+  @Get('qs/:symbol')
+  async qs(@Param() symbol: string): Promise<any> {
+    const results = await yahooFinance.quoteSummary(symbol, {
+      modules: 'all',
+    });
+
+    return results;
+  }
+
   @UseInterceptors(CacheInterceptor)
   @Get('news/:symbol')
-  async news(@Param('symbol') symbol: string): Promise<object> {
-    // get news from the database, where symbol is the same as params.symbol
-    // get one record from the database, where symbol is the same as params.symbol
-    const news = await this.dataSource
-      .getRepository(News)
-      .createQueryBuilder('news')
-      .where('news.symbol = :symbol', { symbol: symbol })
-      .getOne();
+  async news(@Param('symbol') symbol: string): Promise<NewsItem[]> {
+    const newsItems = await this.newsService.news(symbol);
+    return newsItems;
+  }
 
-    // if the news exists, return it
-    if (news) {
-      return {
-        news: JSON.parse(news.json),
-      };
-    }
+  // route to get indexes from database
+  @UseInterceptors(CacheInterceptor)
+  @Get('indexes')
+  async getIndexes(): Promise<Index[]> {
+    // get all indexes from the database
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
 
-    // if the news does not exist, return empty news object
-    return {
-      news: {},
-    };
+    // return the indexes
+    return indexes;
   }
 
   @UseInterceptors(CacheInterceptor)
@@ -677,16 +702,13 @@ export class AppController {
   @ApiExcludeEndpoint()
   @Get('scrape')
   async scrape(): Promise<object> {
-    const browser = await chromium.launchPersistentContext('./browser', {
-      channel: 'chrome',
-      headless: false, // set to true if you want to run in headless mode
-      viewport: null,
-    });
-    // const context = await browser.newContext(contextOptions);
-    const page = await browser.newPage();
+    const page = await newPage();
+
+    // TEST_SCRAPER_URL
+    const url = process.env.TEST_SCRAPER_URL || 'https://www.example.com';
 
     // intialize the page and store any cookies for the next request
-    await page.goto('https://www.reuters.com/markets/quote/.SSMI/', {
+    await page.goto(url, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -699,6 +721,13 @@ export class AppController {
     return {
       message: `Scraped ${content.length} ETF records.`,
     };
+  }
+
+  @ApiExcludeEndpoint()
+  @Get('risk')
+  async risk(): Promise<object> {
+    const results = await analysis('SPY', 'AAPL');
+    return results;
   }
 
   // **************************************************************
@@ -794,7 +823,7 @@ export class AppController {
     // for each index, get the quote, history, search and market movers
     const dashboardPromises = indexes.map(async (index) => {
       // get the quote for the index
-      const quote = await this.getIndexQuote(index.symbol);
+      const quote = await this.quoteModule.quote(index.symbol);
 
       // get the history for the index
       const performance = await this.getIndexPerformance(index.symbol);
@@ -806,7 +835,7 @@ export class AppController {
       const marketMovers = await this.marketMovers(index.symbol);
 
       // forecast the index
-      const forecast = await this.forecast(index.symbol);
+      const forecast = await this.forecast('', index.symbol);
 
       // return the dashboard object for the index
       return {
@@ -841,7 +870,7 @@ export class AppController {
     const marketMovers = await this.marketMovers(index);
 
     // forecast the index
-    const forecast = await this.forecast(index);
+    const forecast = await this.forecast('', index);
 
     // return the dashboard object for the index
     return {
@@ -1008,6 +1037,53 @@ export class AppController {
       price: quote.regularMarketPrice,
       history: this.historyModule.convertToMinimal(lastYearHistory),
       performance: performance.performance,
+    };
+  }
+
+  @Get('scrape-news')
+  async scrapeNews(): Promise<any> {
+    const html = fs.readFileSync('scrape.html', 'utf8');
+    const $ = cheerio.load(html);
+
+    const news: any[] = [];
+
+    $('h2, h3, h4').each((_, el) => {
+      const header = $(el);
+      if (header.text().trim().toLowerCase() === 'latest news') {
+        // Find the news list container (adjust selector as needed)
+        let newsContainer = header.parent().next();
+        if (!newsContainer.length)
+          newsContainer = header.parent().parent().next();
+
+        // Find all news items (adjust selector as needed)
+        newsContainer.find('article, div, li').each((_, item) => {
+          const $item = $(item);
+
+          // find first a with href that has a class name starting with 'media-story-card-module__heading'
+
+          const $link = $item
+            .find('a[class^="media-story-card-module__heading"]')
+            .first();
+
+          const url = $link.attr('href');
+          const img = $item.find('img').attr('src');
+          const heading = $link.text().trim();
+          const time = $item.find('time[datetime]').attr('datetime');
+
+          if (url && heading && time) {
+            news.push({
+              url,
+              img,
+              heading,
+              date: time,
+            });
+          }
+        });
+      }
+    });
+
+    return {
+      news: news,
     };
   }
 }

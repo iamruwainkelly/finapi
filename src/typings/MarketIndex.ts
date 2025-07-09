@@ -12,7 +12,6 @@ export interface MarketIndex {
   yahooFinanceSymbol: string;
   investingSymbol: string;
   investingUrlName: string;
-  //stockListSourceUrl: string;
-  //stockListSourceType: 'csv' | 'wikkipedia' | 'bussinessinsider';
+  reutersNewsUrl: string;
   stockConfig: StockConfig;
 }

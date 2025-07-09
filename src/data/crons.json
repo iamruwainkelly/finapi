@@ -4,7 +4,7 @@
     "method": "getIndexQuotes",
     "description": "Fetches index quotes at regular intervals",
     "interval": 5,
-    "enabled": true
+    "enabled": false
   },
   {
     "name": "INDEX_HISTORY_INTERVAL",

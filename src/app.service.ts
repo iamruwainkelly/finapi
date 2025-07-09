@@ -20,7 +20,7 @@ import { Cron } from './entities/cron.entity';
 import { Setting } from './entities/setting.entity';
 import { Etf } from './entities/etf.entity';
 
-import { BrowserContext, chromium, ChromiumBrowser } from 'patchright';
+import { getBrowser, closeBrowser } from './helpers/browser.singleton';
 import { MarketMover as MarketMoverEntity } from './entities/marketMover.entity';
 
 // MarketMover entity
@@ -40,12 +40,11 @@ import {
 import { Etf as EtfInterface } from './typings/Etf';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { parse as csvParse } from 'csv-parse';
-import yahooFinance from 'yahoo-finance2';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
-import { YahooQuote, YahooQuoteMinimal } from './typings/YahooQuote';
-import { Console } from 'node:console';
+import { NewsService } from './helpers/modules/news.service';
+import { YahooQuoteMinimal } from './typings/YahooQuote';
 
 export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
@@ -87,8 +86,6 @@ export class DatabaseLogger implements TypeOrmLogger {
 
 @Injectable()
 export class AppService implements OnModuleInit, OnModuleDestroy {
-  private browser: BrowserContext;
-
   constructor(
     private dataSource: DataSource,
     private historyModule: HistoryModule,
@@ -325,17 +322,66 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       index.symbol = data.yahooFinanceSymbol;
       index.investingSymbol = data.investingSymbol;
       index.investingUrlName = data.investingUrlName;
+      index.reutersNewsUrl = data.reutersNewsUrl;
       index.created = new Date().getTime();
 
       return index;
     });
 
     await indexRepository.save(indicesToCreateEntities);
-    await this.dataSource.getRepository(LogEntry).save({
-      level: 'info',
-      message: 'Index table checked and initialized (if needed).',
-      context: 'initializeIndexData',
-    });
+  };
+
+  downloadInvestingPages = async () => {
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
+
+    // loop through each index and fetch the market movers
+    for (const index of indexes) {
+      // `investing-com-${index.symbol.replaceAll('^', '')}.html`,
+
+      // get file timestamp and only continue if news is older than 6 hours
+      const fileName = `investing-com-${index.symbol.replaceAll('^', '')}`;
+
+      // set html output path
+      const outputHtmlPath = path.join('./output', 'pages', fileName + '.html');
+
+      if (fs.existsSync(outputHtmlPath)) {
+        const stats = fs.statSync(outputHtmlPath);
+        const fileAgeInHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
+        if (fileAgeInHours < 6) {
+          console.log(
+            `Skipping ${index.symbol} download as the file is less than 6 hours old.`,
+          );
+          continue; // Skip to the next index if the file is less than 6 hours old
+        }
+      }
+
+      // fetch the investing page for the index
+      const url = `https://za.investing.com/indices/${index.investingUrlName}`;
+      const browser = await getBrowser();
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      const content = await page.content();
+      await page.close();
+
+      // save the content to a file for debugging purposes
+      fs.mkdirSync(path.dirname(outputHtmlPath), { recursive: true });
+      fs.writeFileSync(outputHtmlPath, content, 'utf-8');
+
+      // pull json from the script tag with id "__NEXT_DATA__"
+      const $ = cheerio.load(content);
+      const json = $('#__NEXT_DATA__').text();
+      const data = JSON.parse(json);
+
+      // set json output path
+      const outputJsonPath = path.join('./output', 'json', fileName + '.json');
+
+      // ensure the output directory exists
+      fs.mkdirSync(path.dirname(outputJsonPath), { recursive: true });
+      fs.writeFileSync(outputJsonPath, JSON.stringify(data, null, 2));
+    }
   };
 
   initializeIndexStockData = async () => {
@@ -354,11 +400,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       });
 
       if (existingStocks.length > 0) {
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `Stocks for index ${jsonIndex.yahooFinanceSymbol} already exist in the database. Skipping.`,
-          context: 'initializeIndexStockData',
-        });
         continue; // Skip to the next index if stocks already exist
       }
 
@@ -625,30 +666,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // func getIndexGainersAndLosers
   async getIndexGainersAndLosers(symbol: string): Promise<MarketMovers> {
     // get settings from the database
     const settingsRepository = this.dataSource.getRepository(Setting);
     const settings = await settingsRepository.find();
 
-    // Check the SCRAPER key in settings
-    const scraperSetting = settings.find(
-      (setting) => setting.key === 'SCRAPER',
-    );
-
     let marketMovers = null;
 
-    switch (scraperSetting?.value) {
-      case 'BROWSERLESS':
-        // Use Browserless to scrape the data
-        marketMovers = await this.getIndexGainersAndLosersBrowserless(symbol);
-        break;
-      case 'PLAYWRIGHT':
-      default:
-        // Use Playwright to scrape the data
-        marketMovers = await this.getIndexGainersAndLosersPlaywright(symbol);
-        break;
-    }
+    marketMovers = await this.getIndexGainersAndLosersFromFile(symbol);
 
     return marketMovers;
   }
@@ -669,10 +694,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // fetch the market movers from investing.com
     const url = `https://za.investing.com/indices/${index.investingUrlName}`;
 
-    const page = await this.browser.newPage();
+    const browser = await getBrowser();
+    const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     const content = await page.content();
     await page.close();
+
+    // sleep for 1.5 seconds to avoid hitting the API too quickly
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // save the content to a file for debugging purposes
     const outputPath = path.join(
@@ -688,6 +717,40 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     const json = $('#__NEXT_DATA__').text();
 
     // parse the json and get the data from the props object
+    const data = JSON.parse(json);
+
+    const stocks = extractStocks(data);
+    const gainers = getTopMovers(stocks, 'Up');
+    const losers = getTopMovers(stocks, 'Down');
+
+    // return the GainersAndLosers object
+    return {
+      gainers: gainers,
+      losers: losers,
+    };
+  }
+
+  async getIndexGainersAndLosersFromFile(
+    symbol: string,
+  ): Promise<MarketMovers> {
+    // check if the index is valid
+    const indexRepository = this.dataSource.getRepository(Index);
+    const index = await indexRepository.findOne({
+      where: { symbol: symbol },
+    });
+
+    if (!index) {
+      throw new Error(`Index ${index} not found in the database.`);
+    }
+
+    const indexJsonFileName = path.join(
+      './output',
+      'json',
+      `investing-com-${index.symbol.replaceAll('^', '')}.json`,
+    );
+
+    const json = fs.readFileSync(indexJsonFileName, 'utf-8');
+
     const data = JSON.parse(json);
 
     const stocks = extractStocks(data);
@@ -868,74 +931,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // loop through each index and fetch the news from news table
     // const results = await yahooFinance.search(params.symbol);
     for (const index of indexes) {
-      // get news for this index from the database
-      const newsRepository = this.dataSource.getRepository(News);
-      const existingNews = await newsRepository.findOne({
-        where: { symbol: index.symbol },
-      });
-
-      let refetch = false;
-
-      // check if there are existing news
-      // if there are existing news, skip fetching them
-      // also check if the created date is not older than 4 hours, otherwise refetch the news
-      if (existingNews) {
-        const lastCreated = new Date(); // new Date(existingNews.created);
-        const now = new Date();
-        const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-
-        // if the last created date is older than 4 hours, refetch the news
-        if (lastCreated < fourHoursAgo) {
-          refetch = true;
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `News for index ${index.symbol} are older than 4 hours. Refetching.`,
-            context: 'getIndexNews',
-          });
-        } else {
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `News for index ${index.symbol} already exist and are up to date. Skipping.`,
-            context: 'getIndexNews',
-          });
-        }
-      } else {
-        refetch = true;
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `No news found for index ${index.symbol}. Fetching new data.`,
-          context: 'getIndexNews',
-        });
-      }
-
-      if (refetch) {
-        // fetch the news from Yahoo Finance
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `Fetching news for index: ${index.symbol}`,
-          context: 'getIndexNews',
-        });
-
-        const result = await yahooFinance.search(index.symbol);
-
-        // first delete all existing news for this index
-        await newsRepository.delete({ symbol: index.symbol });
-
-        // save the news to the database
-        // use the result as the json field of the News entity
-        const news = new News();
-        news.symbol = index.symbol;
-        news.json = JSON.stringify(result);
-        news.created = new Date().getTime();
-        await newsRepository.save(news);
-
-        // log the success message
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `News for index ${index.symbol} saved successfully.`,
-          context: 'getIndexNews',
-        });
-      }
+      // await this.newsModule.checkForUpdate(index.symbol);
+      //await this.newsModule.updateEntities(index.symbol);
     }
   }
 
@@ -965,32 +962,22 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    this.browser = await chromium.launchPersistentContext('./browser', {
-      channel: 'chrome',
-      headless: false, // Set to false if you want to see the browser
-      viewport: null,
-    });
+    await getBrowser();
 
     // create output directory if it doesn't exist
     const outputDir = path.join('./output');
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-
     await this.initializeSettingsData();
-
     await this.initializeIndexData();
-
+    await this.downloadInvestingPages();
     await this.initializeIndexStockData();
-
     await this.initializeEtfData();
-
     await this.initializeCronJobs();
   }
 
   async onModuleDestroy() {
-    if (this.browser) {
-      await this.browser.close();
-    }
+    await closeBrowser();
   }
 }

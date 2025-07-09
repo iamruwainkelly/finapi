@@ -17,7 +17,9 @@
       "**/data.db",
       "**/data.db-wal",
       "**/data.db-shm",
-      "**/data.db-journal"
+      "**/data.db-journal",
+      "**/output/**",
+      "**/test-scripts/**"
     ]
   }
 }

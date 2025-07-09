@@ -6,6 +6,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
+import { NewsService } from './helpers/modules/news.service';
+
+import { Index } from './entities/index.entity';
+import { News } from './entities/news.entity';
 
 @Module({
   imports: [
@@ -24,9 +28,10 @@ import { QuoteModule } from './helpers/modules/quote';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
+    TypeOrmModule.forFeature([News, Index]),
   ],
   controllers: [AppController],
-  providers: [AppService, HistoryModule, QuoteModule],
+  providers: [AppService, HistoryModule, QuoteModule, NewsService],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {

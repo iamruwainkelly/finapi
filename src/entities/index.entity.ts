@@ -24,6 +24,10 @@ export class Index {
   @Column({ nullable: true })
   investingUrlName: string;
 
+  // reutersNewsUrl
+  @Column({ nullable: true })
+  reutersNewsUrl: string;
+
   @OneToMany(() => Stock, (stock) => stock.index)
   stocks: Stock[];
 
