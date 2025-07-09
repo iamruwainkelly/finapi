@@ -1,50 +1,50 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
-import { AppService } from './app.service';
-import yahooFinance from 'yahoo-finance2';
-import * as fs from 'node:fs';
-import { ApiExcludeEndpoint } from '@nestjs/swagger';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Controller, Get, Param, Query, UseInterceptors } from "@nestjs/common";
+import { AppService } from "./app.service";
+import yahooFinance from "yahoo-finance2";
+import * as fs from "node:fs";
+import { ApiExcludeEndpoint } from "@nestjs/swagger";
+import { CacheInterceptor, CacheTTL } from "@nestjs/cache-manager";
 // entities
-import { Quote as QuoteEntity } from './entities/quote.entity';
+import { Quote as QuoteEntity } from "./entities/quote.entity";
 // history
-import { History } from './entities/history.entity';
+import { History } from "./entities/history.entity";
 // indexes
-import { Index } from './entities/index.entity';
-import { LogEntry } from './entities/logentry.entity';
+import { Index } from "./entities/index.entity";
+import { LogEntry } from "./entities/logentry.entity";
 
-import { DataSource } from 'typeorm';
-import { PerformanceDays } from './typings/PerformanceDays';
+import { DataSource } from "typeorm";
+import { PerformanceDays } from "./typings/PerformanceDays";
 import {
   ChangeAndChangePercent,
   PerformanceTimeFrames,
   SymbolPerformance,
-} from './typings/IndexPerformance';
-import { Quote } from './typings/Quote';
+} from "./typings/IndexPerformance";
+import { Quote } from "./typings/Quote";
 
 // prediction
-import * as prediction from './helpers/modules/prediction.js';
-import { MarketMover } from './entities/marketMover.entity';
-import { News } from './entities/news.entity';
-import { Stock } from './entities/stock.entity';
+import * as prediction from "./helpers/modules/prediction.js";
+import { MarketMover } from "./entities/marketMover.entity";
+import { News } from "./entities/news.entity";
+import { Stock } from "./entities/stock.entity";
 
 // import metrics.ts
-import { getForecast } from './helpers/modules/forecast';
-import { ForecastPeriods } from './typings/Forecasting';
-import { QuoteSummaryResult } from 'yahoo-finance2/dist/esm/src/modules/quoteSummary-iface';
-import { Etf } from './entities/etf.entity';
-import { YahooQuoteMinimal } from './typings/YahooQuote';
+import { getForecast } from "./helpers/modules/forecast";
+import { ForecastPeriods } from "./typings/Forecasting";
+import { QuoteSummaryResult } from "yahoo-finance2/dist/esm/src/modules/quoteSummary-iface";
+import { Etf } from "./entities/etf.entity";
+import { YahooQuoteMinimal } from "./typings/YahooQuote";
 
-import { HistoryModule } from './helpers/modules/history';
-import { QuoteModule } from './helpers/modules/quote';
-import { NewsService } from './helpers/modules/news.service';
+import { HistoryModule } from "./helpers/modules/history";
+import { QuoteModule } from "./helpers/modules/quote";
+import { NewsService } from "./helpers/modules/news.service";
 
-import { HistoryMinimal } from './typings/HistoryMinimal';
-import { newPage } from './helpers/browser.singleton';
+import { HistoryMinimal, HistoryWeb } from "./typings/History";
+import { newPage } from "./helpers/browser.singleton";
 // import cheerio
-import * as cheerio from 'cheerio';
-import { NewsItem, ReutersNews } from './typings/ReutersNews';
-import { analysis } from './helpers/modules/risk';
-import * as dotenv from 'dotenv';
+import * as cheerio from "cheerio";
+import { NewsItem, ReutersNews } from "./typings/ReutersNews";
+import { analysis } from "./helpers/modules/risk";
+import * as dotenv from "dotenv";
 
 dotenv.config();
 
@@ -66,32 +66,32 @@ const calculateChange = (currentPrice: number, previousPrice: number) => {
 
 const indexes = [
   {
-    yahooFinanceSymbol: '^GSPC',
-    investingSymbol: 'SPX',
-    investingUrlName: 'us-spx-500',
+    yahooFinanceSymbol: "^GSPC",
+    investingSymbol: "SPX",
+    investingUrlName: "us-spx-500",
   },
   {
-    yahooFinanceSymbol: '^IXIC',
-    investingSymbol: 'IXIC',
-    investingUrlName: 'nasdaq-composite',
+    yahooFinanceSymbol: "^IXIC",
+    investingSymbol: "IXIC",
+    investingUrlName: "nasdaq-composite",
   },
   {
-    yahooFinanceSymbol: '^STOXX50E',
-    investingSymbol: 'STOXX50E',
-    investingUrlName: 'eu-stoxx50',
+    yahooFinanceSymbol: "^STOXX50E",
+    investingSymbol: "STOXX50E",
+    investingUrlName: "eu-stoxx50",
   },
   {
-    yahooFinanceSymbol: '^SSMI',
-    investingSymbol: 'SMI',
-    investingUrlName: 'switzerland-20',
+    yahooFinanceSymbol: "^SSMI",
+    investingSymbol: "SMI",
+    investingUrlName: "switzerland-20",
   },
 ];
 
 // create an array of user agents
 const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
 ];
 
 const contextOptions = {
@@ -100,7 +100,7 @@ const contextOptions = {
   deviceScaleFactor: 1,
 };
 
-@Controller('api/')
+@Controller("api/")
 export class AppController {
   constructor(
     private readonly appService: AppService,
@@ -239,11 +239,11 @@ export class AppController {
       // print the first and last entry in the historical data
       const firstEntry = historical[0];
       const firstDate = new Date(firstEntry.date);
-      const firstDateString = firstDate.toISOString().split('T')[0];
+      const firstDateString = firstDate.toISOString().split("T")[0];
 
       const lastEntry = historical[historical.length - 1];
       const lastDate = new Date(lastEntry.date);
-      const lastDateString = lastDate.toISOString().split('T')[0];
+      const lastDateString = lastDate.toISOString().split("T")[0];
 
       const startPrice = firstEntry.close;
       const latestPrice = lastEntry.close;
@@ -254,8 +254,9 @@ export class AppController {
       }
 
       const ytdChange = latestPrice - startPrice;
-      const ytdChangePercent =
-        startPrice !== 0 ? (ytdChange / startPrice) * 100 : 0;
+      const ytdChangePercent = startPrice !== 0
+        ? (ytdChange / startPrice) * 100
+        : 0;
 
       return {
         ticker,
@@ -274,9 +275,9 @@ export class AppController {
     // get history from the database, where symbol is the same as params.symbol
     const history = await this.dataSource
       .getRepository(History)
-      .createQueryBuilder('history')
-      .where('history.symbol = :symbol', { symbol: symbol })
-      .orderBy('history.date', 'ASC')
+      .createQueryBuilder("history")
+      .where("history.symbol = :symbol", { symbol: symbol })
+      .orderBy("history.date", "ASC")
       .getMany();
 
     // Sort history by date in ascending order
@@ -305,7 +306,7 @@ export class AppController {
 
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(60 * 60 * 24)
-  @Get('getPrediction/:symbol')
+  @Get("getPrediction/:symbol")
   async getPrediction(@Param() params: any): Promise<object> {
     const p = await prediction.predict(params.symbol);
     return {
@@ -314,10 +315,10 @@ export class AppController {
     };
   }
 
-  @Get('forecast/:index/:symbol')
+  @Get("forecast/:index/:symbol")
   async forecast(
-    @Param('index') index: string,
-    @Param('symbol') symbol: string,
+    @Param("index") index: string,
+    @Param("symbol") symbol: string,
   ): Promise<object> {
     // get quote for the stock
     const quote = await this.quote(symbol);
@@ -356,14 +357,13 @@ export class AppController {
       .map((price, i) => Math.log((price ?? 1) / (closes[i] ?? 1)));
     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
     const squaredDiffs = returns.map((r) => Math.pow(r - mean, 2));
-    const variance =
-      squaredDiffs.reduce((a, b) => a + b, 0) / squaredDiffs.length;
+    const variance = squaredDiffs.reduce((a, b) => a + b, 0) /
+      squaredDiffs.length;
     const stdDev = Math.sqrt(variance);
     const volatility30d = stdDev * Math.sqrt(252) * 100;
 
     const currentVolume = quoteSummary.price?.regularMarketVolume;
-    const averageVolume =
-      quoteSummary.summaryDetail?.averageVolume ||
+    const averageVolume = quoteSummary.summaryDetail?.averageVolume ||
       quoteSummary.summaryDetail?.averageDailyVolume10Day;
 
     const rsi14 = this.calculateRSI(history, 14);
@@ -382,7 +382,7 @@ export class AppController {
       // confidenceLevelText: 'High Confidence',
       // sentiment: 'Strong Buy',
       recentPerformance: 3.42, // get for quote
-      recentPerformanceDirection: 'Up', // get for quote
+      recentPerformanceDirection: "Up", // get for quote
       current: 181.54,
       // target: 191.07,
       // potential: 5.25,
@@ -398,10 +398,10 @@ export class AppController {
       performance: {
         ytdReturn: ytdReturn,
         beta: beta,
-        fiftyTwoWeekRangeLow:
-          quoteSummary.summaryDetail?.fiftyTwoWeekLow ?? null,
-        fiftyTwoWeekRangeHigh:
-          quoteSummary.summaryDetail?.fiftyTwoWeekHigh ?? null,
+        fiftyTwoWeekRangeLow: quoteSummary.summaryDetail?.fiftyTwoWeekLow ??
+          null,
+        fiftyTwoWeekRangeHigh: quoteSummary.summaryDetail?.fiftyTwoWeekHigh ??
+          null,
         volatility30d: volatility30d,
       },
       currentVolume: currentVolume,
@@ -411,53 +411,53 @@ export class AppController {
       riskAnalysis: riskAnalysis,
       riskFactorExposures: [
         {
-          name: 'Market',
+          name: "Market",
           value: 65,
         },
         {
-          name: 'Size',
+          name: "Size",
           value: 12,
         },
         {
-          name: 'Value',
+          name: "Value",
           value: 8,
         },
         {
-          name: 'Momentum',
+          name: "Momentum",
           value: 25,
         },
         {
-          name: 'Quality',
+          name: "Quality",
           value: 5,
         },
         {
-          name: 'Volatility',
+          name: "Volatility",
           value: 18,
         },
       ],
       riskFactorContribution: [
         {
-          name: 'Market',
+          name: "Market",
           value: 65,
         },
         {
-          name: 'Size',
+          name: "Size",
           value: 12,
         },
         {
-          name: 'Value',
+          name: "Value",
           value: 8,
         },
         {
-          name: 'Momentum',
+          name: "Momentum",
           value: 25,
         },
         {
-          name: 'Quality',
+          name: "Quality",
           value: 5,
         },
         {
-          name: 'Volatility',
+          name: "Volatility",
           value: 18,
         },
       ],
@@ -467,14 +467,14 @@ export class AppController {
         expectedShortFall: -7.85,
         maxDrawDown: -18.4,
       },
-      priceHistory: this.historyModule.convertToMinimal(history),
+      priceHistory: this.historyModule.convertToWeb(history),
     };
 
     return results;
   }
 
-  @Get('quote/:symbol')
-  async quote(@Param('symbol') symbol: string): Promise<YahooQuoteMinimal> {
+  @Get("quote/:symbol")
+  async quote(@Param("symbol") symbol: string): Promise<YahooQuoteMinimal> {
     return this.quoteModule.quote(symbol);
   }
 
@@ -482,46 +482,46 @@ export class AppController {
   // d1, d5, m1, m3, m6, y1, y3, y5
   // use setX methods to set the hours, minutes, seconds and milliseconds to 0
   private getPastDate(
-    timeframe: 'd1' | 'd5' | 'm1' | 'm3' | 'm6' | 'y1' | 'y3' | 'y5',
+    timeframe: "d1" | "d5" | "m1" | "m3" | "m6" | "y1" | "y3" | "y5",
   ): Date {
     let date = new Date();
     date.setHours(0, 0, 0, 0);
 
     switch (timeframe) {
-      case 'd1':
+      case "d1":
         date.setDate(date.getDate() - 1);
         break;
-      case 'd5':
+      case "d5":
         date.setDate(date.getDate() - 5);
         break;
-      case 'm1':
+      case "m1":
         date.setMonth(date.getMonth() - 1);
         break;
-      case 'm3':
+      case "m3":
         date.setMonth(date.getMonth() - 3);
         break;
-      case 'm6':
+      case "m6":
         date.setMonth(date.getMonth() - 6);
         break;
-      case 'y1':
+      case "y1":
         date.setFullYear(date.getFullYear() - 1);
         break;
-      case 'y3':
+      case "y3":
         date.setFullYear(date.getFullYear() - 3);
         break;
-      case 'y5':
+      case "y5":
         date.setFullYear(date.getFullYear() - 5);
         break;
       default:
-        throw new Error('Invalid timeframe');
+        throw new Error("Invalid timeframe");
     }
 
     return date;
   }
 
-  @Get('performance/:symbol')
+  @Get("performance/:symbol")
   async performance(
-    @Param('symbol') symbol: string,
+    @Param("symbol") symbol: string,
   ): Promise<SymbolPerformance> {
     // get history from the database, where symbol is the same as symbol param
     const history = await this.historyModule.history(symbol);
@@ -529,36 +529,36 @@ export class AppController {
     // create object array for different time periods
     const timeframes = [
       {
-        name: 'd1',
+        name: "d1",
         startDay: new Date(history[history.length - 5]?.date ?? Date.now()),
       },
       {
-        name: 'd5',
-        startDay: this.getPastDate('d5'),
+        name: "d5",
+        startDay: this.getPastDate("d5"),
       },
       {
-        name: 'm1',
-        startDay: this.getPastDate('m1'),
+        name: "m1",
+        startDay: this.getPastDate("m1"),
       },
       {
-        name: 'm3',
-        startDay: this.getPastDate('m3'),
+        name: "m3",
+        startDay: this.getPastDate("m3"),
       },
       {
-        name: 'm6',
-        startDay: this.getPastDate('m6'),
+        name: "m6",
+        startDay: this.getPastDate("m6"),
       },
       {
-        name: 'y1',
-        startDay: this.getPastDate('y1'),
+        name: "y1",
+        startDay: this.getPastDate("y1"),
       },
       {
-        name: 'y3',
-        startDay: this.getPastDate('y3'),
+        name: "y3",
+        startDay: this.getPastDate("y3"),
       },
       {
-        name: 'y5',
-        startDay: this.getPastDate('y5'),
+        name: "y5",
+        startDay: this.getPastDate("y5"),
       },
     ];
 
@@ -588,13 +588,13 @@ export class AppController {
 
     const performance: PerformanceTimeFrames = {
       d1: oneDay,
-      d5: performanceData.find((d) => d.period === 'd5')?.data,
-      m1: performanceData.find((d) => d.period === 'm1')?.data,
-      m3: performanceData.find((d) => d.period === 'm3')?.data,
-      m6: performanceData.find((d) => d.period === 'm6')?.data,
-      y1: performanceData.find((d) => d.period === 'y1')?.data,
-      y3: performanceData.find((d) => d.period === 'y3')?.data,
-      y5: performanceData.find((d) => d.period === 'y5')?.data,
+      d5: performanceData.find((d) => d.period === "d5")?.data,
+      m1: performanceData.find((d) => d.period === "m1")?.data,
+      m3: performanceData.find((d) => d.period === "m3")?.data,
+      m6: performanceData.find((d) => d.period === "m6")?.data,
+      y1: performanceData.find((d) => d.period === "y1")?.data,
+      y3: performanceData.find((d) => d.period === "y3")?.data,
+      y5: performanceData.find((d) => d.period === "y5")?.data,
       ytd: ytdData,
     };
 
@@ -606,14 +606,14 @@ export class AppController {
   }
 
   // quoteSummary
-  @Get('quote-summary/:symbol')
+  @Get("quote-summary/:symbol")
   async quoteSummary(@Param() symbol: string): Promise<QuoteSummaryResult> {
     const results = await yahooFinance.quoteSummary(symbol, {
       modules: [
-        'defaultKeyStatistics',
-        'financialData',
-        'summaryDetail',
-        'price',
+        "defaultKeyStatistics",
+        "financialData",
+        "summaryDetail",
+        "price",
       ],
     });
 
@@ -621,30 +621,30 @@ export class AppController {
   }
 
   // quoteSummary
-  @Get('qs/:symbol')
+  @Get("qs/:symbol")
   async qs(@Param() symbol: string): Promise<any> {
     const results = await yahooFinance.quoteSummary(symbol, {
-      modules: 'all',
+      modules: "all",
     });
 
     return results;
   }
 
   @UseInterceptors(CacheInterceptor)
-  @Get('news/:symbol')
-  async news(@Param('symbol') symbol: string): Promise<NewsItem[]> {
+  @Get("news/:symbol")
+  async news(@Param("symbol") symbol: string): Promise<NewsItem[]> {
     const newsItems = await this.newsService.news(symbol);
     return newsItems;
   }
 
   // route to get indexes from database
   @UseInterceptors(CacheInterceptor)
-  @Get('indexes')
+  @Get("indexes")
   async getIndexes(): Promise<Index[]> {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // return the indexes
@@ -653,9 +653,9 @@ export class AppController {
 
   @UseInterceptors(CacheInterceptor)
   @ApiExcludeEndpoint()
-  @Get('market-movers/:symbol')
+  @Get("market-movers/:symbol")
   // @Param('symbol') symbol: string,
-  async marketMovers(@Param('symbol') symbol: string): Promise<object> {
+  async marketMovers(@Param("symbol") symbol: string): Promise<object> {
     // get the index from the indexes array
     const indexEntry = indexes.find(
       (index) => index.yahooFinanceSymbol === symbol.toUpperCase(),
@@ -665,7 +665,7 @@ export class AppController {
     if (!indexEntry) {
       return {
         error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
+          "Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI",
       };
     }
 
@@ -673,8 +673,8 @@ export class AppController {
     // return the json from the database if it exists
     const marketMovers = await this.dataSource
       .getRepository(MarketMover)
-      .createQueryBuilder('marketMover')
-      .where('marketMover.symbol = :symbol', {
+      .createQueryBuilder("marketMover")
+      .where("marketMover.symbol = :symbol", {
         symbol: indexEntry.yahooFinanceSymbol,
       })
       .getOne();
@@ -700,22 +700,22 @@ export class AppController {
 
   // route for scraping a url
   @ApiExcludeEndpoint()
-  @Get('scrape')
+  @Get("scrape")
   async scrape(): Promise<object> {
     const page = await newPage();
 
     // TEST_SCRAPER_URL
-    const url = process.env.TEST_SCRAPER_URL || 'https://www.example.com';
+    const url = process.env.TEST_SCRAPER_URL || "https://www.example.com";
 
     // intialize the page and store any cookies for the next request
     await page.goto(url, {
-      waitUntil: 'domcontentloaded',
+      waitUntil: "domcontentloaded",
     });
 
     const content = await page.content();
 
     // Optional: Save to file
-    fs.writeFileSync('scrape.html', content);
+    fs.writeFileSync("scrape.html", content);
 
     // Return the scraped data
     return {
@@ -724,9 +724,9 @@ export class AppController {
   }
 
   @ApiExcludeEndpoint()
-  @Get('risk')
+  @Get("risk")
   async risk(): Promise<object> {
-    const results = await analysis('SPY', 'AAPL');
+    const results = await analysis("SPY", "AAPL");
     return results;
   }
 
@@ -734,15 +734,15 @@ export class AppController {
   // Index related endpoints
   // **************************************************************
 
-  @Get('getIndexQuote/:symbol')
+  @Get("getIndexQuote/:symbol")
   async getIndexQuote(
-    @Param('symbol') symbol: string,
+    @Param("symbol") symbol: string,
   ): Promise<Quote | { error: string }> {
     // get the quote for the symbol from the database
     const quote = await this.dataSource
       .getRepository(QuoteEntity)
-      .createQueryBuilder('quote')
-      .where('quote.symbol = :symbol', { symbol: symbol })
+      .createQueryBuilder("quote")
+      .where("quote.symbol = :symbol", { symbol: symbol })
       .getOne();
 
     // print quote if it exists
@@ -765,12 +765,12 @@ export class AppController {
   }
 
   // getIndexHistorical
-  @Get('getIndexPerformances')
+  @Get("getIndexPerformances")
   async getIndexPerformances(): Promise<SymbolPerformance[]> {
     // get all indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // for each index, get the history from this.performance
@@ -790,7 +790,7 @@ export class AppController {
   }
 
   // getIndexPerformance
-  @Get('getIndexPerformance/:symbol')
+  @Get("getIndexPerformance/:symbol")
   async getIndexPerformance(
     @Param() symbol: string,
   ): Promise<SymbolPerformance | { error: string }> {
@@ -812,12 +812,12 @@ export class AppController {
     return performance;
   }
 
-  @Get('dashboard')
+  @Get("dashboard")
   async dashboard(): Promise<object> {
     // get indexes from the database
     const indexes = await this.dataSource
       .getRepository(Index)
-      .createQueryBuilder('index')
+      .createQueryBuilder("index")
       .getMany();
 
     // for each index, get the quote, history, search and market movers
@@ -835,7 +835,7 @@ export class AppController {
       const marketMovers = await this.marketMovers(index.symbol);
 
       // forecast the index
-      const forecast = await this.forecast('', index.symbol);
+      const forecast = await this.forecast("", index.symbol);
 
       // return the dashboard object for the index
       return {
@@ -855,8 +855,8 @@ export class AppController {
     return dashboardResults;
   }
 
-  @Get('dashboard2/:index')
-  async dashboard2(@Param('index') index: string): Promise<object> {
+  @Get("dashboard2/:index")
+  async dashboard2(@Param("index") index: string): Promise<object> {
     // get the quote for the index
     const quote = await this.quoteModule.quote(index);
 
@@ -870,7 +870,7 @@ export class AppController {
     const marketMovers = await this.marketMovers(index);
 
     // forecast the index
-    const forecast = await this.forecast('', index);
+    const forecast = await this.forecast("", index);
 
     // return the dashboard object for the index
     return {
@@ -883,15 +883,15 @@ export class AppController {
     };
   }
 
-  @Get('logs')
+  @Get("logs")
   async getLogs(): Promise<object[]> {
     const logs = await this.dataSource
       .getRepository(LogEntry)
-      .createQueryBuilder('log')
-      .orderBy('log.id', 'DESC')
+      .createQueryBuilder("log")
+      .orderBy("log.id", "DESC")
       .getMany();
     return logs.map((log) => {
-      let createdISO: string = '';
+      let createdISO: string = "";
       // convert getTime() to ISO string
       if (log.created) {
         createdISO = new Date(log.created).toISOString();
@@ -906,23 +906,23 @@ export class AppController {
     });
   }
 
-  @Get('stocks/:indexSymbol')
+  @Get("stocks/:indexSymbol")
   async getStocksByIndex(
-    @Param('indexSymbol') indexSymbol: string,
+    @Param("indexSymbol") indexSymbol: string,
   ): Promise<object[]> {
     const stocks = await this.dataSource
       .getRepository(Stock)
-      .createQueryBuilder('stock')
-      .where('stock.indexSymbol = :indexSymbol', { indexSymbol })
+      .createQueryBuilder("stock")
+      .where("stock.indexSymbol = :indexSymbol", { indexSymbol })
       .getMany();
     return stocks;
   }
 
-  @Get('stocks')
+  @Get("stocks")
   async getStocks(): Promise<object[]> {
     const stocks = await this.dataSource
       .getRepository(Stock)
-      .createQueryBuilder('stock')
+      .createQueryBuilder("stock")
       .getMany();
     return stocks;
   }
@@ -930,15 +930,15 @@ export class AppController {
   // add route to get etf
   // only get id, symbol, name
   // allow search by symbol and name
-  @Get('etfs')
-  async getEtfs(@Query('search') search?: string): Promise<Etf[]> {
+  @Get("etfs")
+  async getEtfs(@Query("search") search?: string): Promise<Etf[]> {
     const query = this.dataSource
       .getRepository(Etf)
-      .createQueryBuilder('etf')
-      .select(['etf.id', 'etf.symbol', 'etf.name']);
+      .createQueryBuilder("etf")
+      .select(["etf.id", "etf.symbol", "etf.name"]);
 
     if (search) {
-      query.where('etf.symbol LIKE :search OR etf.name LIKE :search', {
+      query.where("etf.symbol LIKE :search OR etf.name LIKE :search", {
         search: `%${search}%`,
       });
     }
@@ -946,19 +946,19 @@ export class AppController {
     return await query.getMany();
   }
 
-  @Get('etf/:id')
-  async getEtfById(@Param('id') id: number): Promise<Etf | null> {
+  @Get("etf/:id")
+  async getEtfById(@Param("id") id: number): Promise<Etf | null> {
     const etf = await this.dataSource
       .getRepository(Etf)
-      .createQueryBuilder('etf')
-      .where('etf.id = :id', { id })
-      .select(['etf.id', 'etf.symbol', 'etf.name'])
+      .createQueryBuilder("etf")
+      .where("etf.id = :id", { id })
+      .select(["etf.id", "etf.symbol", "etf.name"])
       .getOne();
     return etf || null;
   }
 
-  @Get('price-change/:symbol')
-  async getPriceChange(@Param('symbol') symbol: string): Promise<PeerResult> {
+  @Get("price-change/:symbol")
+  async getPriceChange(@Param("symbol") symbol: string): Promise<PeerResult> {
     // get current price from the quote
     const quote = await yahooFinance.quote(symbol);
 
@@ -976,13 +976,13 @@ export class AppController {
     };
   }
 
-  @Get('history/:symbol')
-  async history(@Param('symbol') symbol: string): Promise<HistoryMinimal[]> {
-    return this.historyModule.getHistoryMinimal(symbol);
+  @Get("history/:symbol")
+  async history(@Param("symbol") symbol: string): Promise<HistoryWeb[]> {
+    return this.historyModule.getHistoryWeb(symbol);
   }
 
-  @Get('peer/:symbol')
-  async peer(@Param('symbol') symbol: string): Promise<any> {
+  @Get("peer/:symbol")
+  async peer(@Param("symbol") symbol: string): Promise<any> {
     // trim the symbol to ensure it is in uppercase
     symbol = symbol.trim().toUpperCase();
 
@@ -1021,8 +1021,8 @@ export class AppController {
     // get etf from the database
     const etf = await this.dataSource
       .getRepository(Etf)
-      .createQueryBuilder('etf')
-      .where('etf.symbol = :symbol', { symbol: symbol })
+      .createQueryBuilder("etf")
+      .where("etf.symbol = :symbol", { symbol: symbol })
       .getOne();
 
     // return the peer result
@@ -1033,30 +1033,31 @@ export class AppController {
       market: quote.market,
       shortName: quote.shortName ?? quote.longName ?? symbol.toUpperCase(),
       longName: quote.longName ?? quote.shortName ?? symbol.toUpperCase(),
-      currency: quote.currency ?? 'USD',
+      currency: quote.currency ?? "USD",
       price: quote.regularMarketPrice,
       history: this.historyModule.convertToMinimal(lastYearHistory),
       performance: performance.performance,
     };
   }
 
-  @Get('scrape-news')
+  @Get("scrape-news")
   async scrapeNews(): Promise<any> {
-    const html = fs.readFileSync('scrape.html', 'utf8');
+    const html = fs.readFileSync("scrape.html", "utf8");
     const $ = cheerio.load(html);
 
     const news: any[] = [];
 
-    $('h2, h3, h4').each((_, el) => {
+    $("h2, h3, h4").each((_, el) => {
       const header = $(el);
-      if (header.text().trim().toLowerCase() === 'latest news') {
+      if (header.text().trim().toLowerCase() === "latest news") {
         // Find the news list container (adjust selector as needed)
         let newsContainer = header.parent().next();
-        if (!newsContainer.length)
+        if (!newsContainer.length) {
           newsContainer = header.parent().parent().next();
+        }
 
         // Find all news items (adjust selector as needed)
-        newsContainer.find('article, div, li').each((_, item) => {
+        newsContainer.find("article, div, li").each((_, item) => {
           const $item = $(item);
 
           // find first a with href that has a class name starting with 'media-story-card-module__heading'
@@ -1065,10 +1066,10 @@ export class AppController {
             .find('a[class^="media-story-card-module__heading"]')
             .first();
 
-          const url = $link.attr('href');
-          const img = $item.find('img').attr('src');
+          const url = $link.attr("href");
+          const img = $item.find("img").attr("src");
           const heading = $link.text().trim();
-          const time = $item.find('time[datetime]').attr('datetime');
+          const time = $item.find("time[datetime]").attr("datetime");
 
           if (url && heading && time) {
             news.push({
