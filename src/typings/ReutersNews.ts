@@ -29,13 +29,6 @@ export interface Pagination {
   orderby: string;
 }
 
-export interface NewsItem {
-  imageUrl: string;
-  url: string;
-  title: string;
-  date: number;
-}
-
 export interface Article {
   id: string;
   canonical_url: string;

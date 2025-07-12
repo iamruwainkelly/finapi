@@ -23,7 +23,6 @@ interface Stock {
 // read ./browserql_content_2025-06-30T10-49-01-998Z.json file
 import * as fs from 'node:fs';
 import * as cheerio from 'cheerio';
-// import { extractStocks, getTopMovers } from '../../src/helpers/modules/movers';
 
 // Helper to flatten and extract all stocks
 export function extractStocks(data: any): Stock[] {

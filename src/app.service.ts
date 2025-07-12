@@ -32,18 +32,13 @@ import { Logger as TypeOrmLogger } from 'typeorm';
 
 import { LogEntry } from './entities/logentry.entity';
 
-import {
-  extractStocks,
-  getTopMovers,
-  parseTable,
-} from './helpers/modules/movers';
+import { extractStocks, getGainers, getLosers } from './helpers/modules/movers';
 import { Etf as EtfInterface } from './typings/Etf';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { parse as csvParse } from 'csv-parse';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
-import { NewsService } from './helpers/modules/news.service';
 import { YahooQuoteMinimal } from './typings/YahooQuote';
 
 export class DatabaseLogger implements TypeOrmLogger {
@@ -719,9 +714,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     // parse the json and get the data from the props object
     const data = JSON.parse(json);
 
-    const stocks = extractStocks(data);
-    const gainers = getTopMovers(stocks, 'Up');
-    const losers = getTopMovers(stocks, 'Down');
+    const gainers = getGainers(data);
+    const losers = getLosers(data);
 
     // return the GainersAndLosers object
     return {
@@ -753,9 +747,9 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     const data = JSON.parse(json);
 
-    const stocks = extractStocks(data);
-    const gainers = getTopMovers(stocks, 'Up');
-    const losers = getTopMovers(stocks, 'Down');
+    // extract the stocks from the data
+    const gainers = getGainers(data);
+    const losers = getLosers(data);
 
     // return the GainersAndLosers object
     return {
@@ -836,12 +830,12 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     const htmlContent = responseJson.data.html.html;
 
-    const gainers = parseTable(htmlContent, '[data-test="gainers-table"]');
-    const losers = parseTable(htmlContent, '[data-test="losers-table"]');
+    //const gainers = parseTable(htmlContent, '[data-test="gainers-table"]');
+    //const losers = parseTable(htmlContent, '[data-test="losers-table"]');
 
     const marketMovers: MarketMovers = {
-      gainers: gainers,
-      losers: losers,
+      gainers: [],
+      losers: [],
     };
 
     // return the GainersAndLosers object

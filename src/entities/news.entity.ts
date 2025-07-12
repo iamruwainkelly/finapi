@@ -4,13 +4,10 @@ import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
 @Entity()
 export class News {
   @PrimaryGeneratedColumn()
-  id: number;
+  id?: number;
 
   @Column()
-  symbol: string;
-
-  // @Column({ nullable: true })
-  // json: string;
+  symbol?: string;
 
   // title
   @Column({ nullable: true })
@@ -28,12 +25,16 @@ export class News {
   @Column({ nullable: true })
   date: number;
 
+  // provider
+  @Column({ nullable: true })
+  provider: string;
+
   // created is a timestamp in seconds
   @Column()
-  created: number;
+  created?: number;
 
   @Column({ nullable: true })
-  createdString: string;
+  createdString?: string;
 
   // updated
   @Column({ nullable: true })

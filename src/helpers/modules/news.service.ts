@@ -1,4 +1,4 @@
-import { Article, NewsItem, ReutersNews } from 'src/typings/ReutersNews';
+import { ReutersNews } from 'src/typings/ReutersNews';
 import { getBrowser, newPage } from '../browser.singleton';
 import * as cheerio from 'cheerio';
 import { Index } from 'src/entities/index.entity';
@@ -10,6 +10,7 @@ import { InvestingNews } from 'src/typings/InvestingNews';
 import { Injectable } from '@nestjs/common';
 import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { NewsItem } from 'src/typings/NewsItem';
 
 export function getReutersNewsItems(index: Index): Promise<NewsItem[]> {
   return new Promise(async (resolve, reject) => {
@@ -54,7 +55,7 @@ export function getReutersNewsItems(index: Index): Promise<NewsItem[]> {
         // Extract news articles from the JSON
         reutersNews.result.articles.forEach((article) => {
           news.push({
-            imageUrl: article.thumbnail.resizer_url,
+            image: article.thumbnail.resizer_url,
             title: article.title,
             // if article.canonical_url starts with a /
             url: article.canonical_url.startsWith('/')
@@ -63,6 +64,7 @@ export function getReutersNewsItems(index: Index): Promise<NewsItem[]> {
             date: toDate(
               article.updated_time || article.published_time,
             ).getTime(),
+            provider: article.distributor || 'Reuters',
           });
         });
       }
@@ -82,20 +84,19 @@ export function extractNewsFromInvestingComJson(jsonData: any): NewsItem[] {
     jsonData.props.pageProps.state.newsStore._topArticles;
 
   articles.forEach((article) => {
-    const title = article.title;
     // if href starts with a /
     // then prepend https://www.investing.com
     const url = article.href.startsWith('/')
       ? `https://www.investing.com${article.href}`
       : article.href;
     const date = article.date;
-    const imageUrl = article.imageHref;
 
     newsItems.push({
-      title,
-      url,
+      title: article.title,
+      url: url,
+      image: article.imageHref,
       date: toDate(date).getTime(),
-      imageUrl: imageUrl,
+      provider: article.provider,
     });
   });
 
@@ -204,8 +205,9 @@ export class NewsService {
           // news.json = JSON.stringify(item);
           news.title = item.title;
           news.url = item.url;
-          news.imageUrl = item.imageUrl;
+          news.imageUrl = item.image;
           news.date = item.date;
+          news.provider = item.provider;
           news.created = now.getTime();
           news.createdString = now.toISOString();
           news.updated = now.getTime();
@@ -241,7 +243,7 @@ export class NewsService {
             news.symbol = symbol;
             news.title = item.title;
             news.url = item.url;
-            news.imageUrl = item.imageUrl;
+            news.imageUrl = item.image;
             news.date = item.date;
             news.updated = now.getTime();
             news.updatedString = now.toISOString();
@@ -257,7 +259,7 @@ export class NewsService {
     }
   };
 
-  news = async (symbol: string): Promise<NewsItem[]> => {
+  news = async (symbol: string): Promise<News[]> => {
     // check for updates
     await this.checkForUpdate(symbol);
 
