@@ -67,6 +67,7 @@ __pycache__/
 
 # venv
 venv/
+.venv/
 
 # chrome
 browser/

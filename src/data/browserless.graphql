@@ -1,0 +1,15 @@
+mutation GetContent($url: String!) {
+  # to save bandwidth, you can use this reject function
+  reject(type: [image, media, font, stylesheet]) {
+    enabled
+    time
+  }
+
+  goto(url: $url, waitUntil: firstContentfulPaint) {
+    status
+  }
+
+  html {
+    html
+  }
+}

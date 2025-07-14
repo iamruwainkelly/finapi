@@ -42,12 +42,7 @@ import { HistoryMinimal, HistoryWeb } from './typings/History';
 import { newPage } from './helpers/browser.singleton';
 // import cheerio
 import * as cheerio from 'cheerio';
-import { ReutersNews } from './typings/ReutersNews';
 import { analysis } from './helpers/modules/risk';
-import * as dotenv from 'dotenv';
-import { NewsItem } from './typings/NewsItem';
-
-dotenv.config();
 
 interface PeerResult {
   symbol: string;

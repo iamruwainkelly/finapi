@@ -40,6 +40,8 @@ import { parse as csvParse } from 'csv-parse';
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
 import { YahooQuoteMinimal } from './typings/YahooQuote';
+import { ConfigService } from '@nestjs/config';
+import { ScrapeService } from './scrape/scrape.service';
 
 export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
@@ -85,6 +87,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     private dataSource: DataSource,
     private historyModule: HistoryModule,
     private quoteModule: QuoteModule,
+    private configService: ConfigService,
+    private scrapeService: ScrapeService,
   ) {}
 
   async getStocksFromCsv(
@@ -355,15 +359,28 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
       // fetch the investing page for the index
       const url = `https://za.investing.com/indices/${index.investingUrlName}`;
-      const browser = await getBrowser();
-      const page = await browser.newPage();
-      await page.goto(url, { waitUntil: 'domcontentloaded' });
-      const content = await page.content();
-      await page.close();
 
-      // save the content to a file for debugging purposes
-      fs.mkdirSync(path.dirname(outputHtmlPath), { recursive: true });
-      fs.writeFileSync(outputHtmlPath, content, 'utf-8');
+      const cloudScrapingEnabled = this.configService.get(
+        'FINAPI_CLOUD_SCRAPING_ENABLED',
+      );
+
+      console.log(`Cloud scraping enabled: ${cloudScrapingEnabled}`);
+
+      let content: string;
+      if (cloudScrapingEnabled) {
+        content = await this.scrapeService.cloudScrape(url);
+      } else {
+        content = await this.scrapeService.localScrape(url);
+      }
+
+      // write the content to a file
+      const outputHtmlPathX = path.join(
+        './output',
+        'content',
+        fileName + '.html',
+      );
+      fs.mkdirSync(path.dirname(outputHtmlPathX), { recursive: true });
+      fs.writeFileSync(outputHtmlPathX, content);
 
       // pull json from the script tag with id "__NEXT_DATA__"
       const $ = cheerio.load(content);

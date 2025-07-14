@@ -10,6 +10,8 @@ import { NewsService } from './helpers/modules/news.service';
 
 import { Index } from './entities/index.entity';
 import { News } from './entities/news.entity';
+import { ScrapeService } from './scrape/scrape.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -29,9 +31,18 @@ import { News } from './entities/news.entity';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([News, Index]),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService, HistoryModule, QuoteModule, NewsService],
+  providers: [
+    AppService,
+    HistoryModule,
+    QuoteModule,
+    NewsService,
+    ScrapeService,
+  ],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {
