@@ -6,12 +6,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
-import { NewsService } from './helpers/modules/news.service';
+import { NewsService } from './modules/news/news.service';
 
 import { Index } from './entities/index.entity';
 import { News } from './entities/news.entity';
-import { ScrapeService } from './scrape/scrape.service';
+import { ScrapeService } from './modules/scrape/scrape.service';
 import { ConfigModule } from '@nestjs/config';
+import { AppDataSource } from './data-source';
+import { MarketMoverService } from './modules/market-mover/market-mover.service';
 
 @Module({
   imports: [
@@ -21,15 +23,7 @@ import { ConfigModule } from '@nestjs/config';
       // 5 minutes = 5 * 60 seconds = 5 * 1000 milliseconds
       ttl: 60 * 15 * 1000,
     }),
-    TypeOrmModule.forRoot({
-      type: 'better-sqlite3',
-
-      // im-memory
-      database: ':memory:',
-      // database: './data.db',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-    }),
+    TypeOrmModule.forRoot(AppDataSource.options),
     TypeOrmModule.forFeature([News, Index]),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -42,6 +36,7 @@ import { ConfigModule } from '@nestjs/config';
     QuoteModule,
     NewsService,
     ScrapeService,
+    MarketMoverService,
   ],
 })
 export class AppModule {

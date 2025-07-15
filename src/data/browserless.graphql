@@ -1,15 +1,14 @@
 mutation GetContent($url: String!) {
-  # to save bandwidth, you can use this reject function
   reject(type: [image, media, font, stylesheet]) {
     enabled
     time
   }
 
-  goto(url: $url, waitUntil: firstContentfulPaint) {
+  goto(url: $url, waitUntil: firstMeaningfulPaint) {
     status
   }
 
-  html {
+  html(clean: { removeAttributes: false, removeNonTextNodes: true }) {
     html
   }
 }

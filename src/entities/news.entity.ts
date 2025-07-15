@@ -1,46 +1,25 @@
 // news entity
-import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
+import { DatabaseModel } from 'src/models/database.model';
+import { NewsModel } from 'src/models/news.model';
+import { Entity, Column } from 'typeorm';
 
 @Entity()
-export class News {
-  @PrimaryGeneratedColumn()
-  id?: number;
+export class News extends DatabaseModel implements NewsModel {
+  @Column({ unique: true })
+  symbol: string;
 
   @Column()
-  symbol?: string;
-
-  // title
-  @Column({ nullable: true })
   title: string;
 
-  // url
-  @Column({ nullable: true })
+  @Column()
   url: string;
 
-  // image
   @Column({ nullable: true })
-  imageUrl: string;
+  imageUrl?: string;
 
-  // date
-  @Column({ nullable: true })
+  @Column()
   date: number;
 
-  // provider
-  @Column({ nullable: true })
-  provider: string;
-
-  // created is a timestamp in seconds
   @Column()
-  created?: number;
-
-  @Column({ nullable: true })
-  createdString?: string;
-
-  // updated
-  @Column({ nullable: true })
-  updated: number;
-
-  // updatedAt
-  @Column({ nullable: true })
-  updatedString: string;
+  provider: string;
 }

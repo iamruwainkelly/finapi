@@ -36,7 +36,7 @@ import { YahooQuoteMinimal } from './typings/YahooQuote';
 
 import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
-import { NewsService } from './helpers/modules/news.service';
+import { NewsService } from './modules/news/news.service';
 
 import { HistoryMinimal, HistoryWeb } from './typings/History';
 import { newPage } from './helpers/browser.singleton';
@@ -636,7 +636,7 @@ export class AppController {
   @UseInterceptors(CacheInterceptor)
   @Get('news/:symbol')
   async news(@Param('symbol') symbol: string): Promise<News[]> {
-    const newsItems = await this.newsService.news(symbol);
+    const newsItems = await this.newsService.get(symbol);
     return newsItems;
   }
 

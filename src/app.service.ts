@@ -1,8 +1,3 @@
-interface MarketMovers {
-  gainers: MarketMover[];
-  losers: MarketMover[];
-}
-
 import { Index } from './entities/index.entity';
 // stock
 import { Stock } from './entities/stock.entity';
@@ -23,16 +18,18 @@ import { Etf } from './entities/etf.entity';
 import { getBrowser, closeBrowser } from './helpers/browser.singleton';
 import { MarketMover as MarketMoverEntity } from './entities/marketMover.entity';
 
-// MarketMover entity
-import { MarketMover } from './typings/MarketMover';
-
 import { News } from './entities/news.entity';
 
 import { Logger as TypeOrmLogger } from 'typeorm';
 
 import { LogEntry } from './entities/logentry.entity';
 
-import { extractStocks, getGainers, getLosers } from './helpers/modules/movers';
+import {
+  extractStocks,
+  getGainers,
+  getLosers,
+  parseTable,
+} from './helpers/modules/movers';
 import { Etf as EtfInterface } from './typings/Etf';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { parse as csvParse } from 'csv-parse';
@@ -41,7 +38,10 @@ import { HistoryModule } from './helpers/modules/history';
 import { QuoteModule } from './helpers/modules/quote';
 import { YahooQuoteMinimal } from './typings/YahooQuote';
 import { ConfigService } from '@nestjs/config';
-import { ScrapeService } from './scrape/scrape.service';
+import { ScrapeService } from './modules/scrape/scrape.service';
+import { Mover } from './typings/Mover';
+import { NewsService } from './modules/news/news.service';
+import { MarketMoverService } from './modules/market-mover/market-mover.service';
 
 export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
@@ -89,6 +89,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     private quoteModule: QuoteModule,
     private configService: ConfigService,
     private scrapeService: ScrapeService,
+    private newsService: NewsService,
+    private marketMoverService: MarketMoverService,
   ) {}
 
   async getStocksFromCsv(
@@ -330,7 +332,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     await indexRepository.save(indicesToCreateEntities);
   };
 
-  downloadInvestingPages = async () => {
+  updateNews = async () => {
     const indexes = await this.dataSource
       .getRepository(Index)
       .createQueryBuilder('index')
@@ -338,61 +340,19 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
     // loop through each index and fetch the market movers
     for (const index of indexes) {
-      // `investing-com-${index.symbol.replaceAll('^', '')}.html`,
+      await this.newsService.get(index.symbol);
+    }
+  };
 
-      // get file timestamp and only continue if news is older than 6 hours
-      const fileName = `investing-com-${index.symbol.replaceAll('^', '')}`;
+  updateMarketMovers = async () => {
+    const indexes = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .getMany();
 
-      // set html output path
-      const outputHtmlPath = path.join('./output', 'pages', fileName + '.html');
-
-      if (fs.existsSync(outputHtmlPath)) {
-        const stats = fs.statSync(outputHtmlPath);
-        const fileAgeInHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-        if (fileAgeInHours < 6) {
-          console.log(
-            `Skipping ${index.symbol} download as the file is less than 6 hours old.`,
-          );
-          continue; // Skip to the next index if the file is less than 6 hours old
-        }
-      }
-
-      // fetch the investing page for the index
-      const url = `https://za.investing.com/indices/${index.investingUrlName}`;
-
-      const cloudScrapingEnabled = this.configService.get(
-        'FINAPI_CLOUD_SCRAPING_ENABLED',
-      );
-
-      console.log(`Cloud scraping enabled: ${cloudScrapingEnabled}`);
-
-      let content: string;
-      if (cloudScrapingEnabled) {
-        content = await this.scrapeService.cloudScrape(url);
-      } else {
-        content = await this.scrapeService.localScrape(url);
-      }
-
-      // write the content to a file
-      const outputHtmlPathX = path.join(
-        './output',
-        'content',
-        fileName + '.html',
-      );
-      fs.mkdirSync(path.dirname(outputHtmlPathX), { recursive: true });
-      fs.writeFileSync(outputHtmlPathX, content);
-
-      // pull json from the script tag with id "__NEXT_DATA__"
-      const $ = cheerio.load(content);
-      const json = $('#__NEXT_DATA__').text();
-      const data = JSON.parse(json);
-
-      // set json output path
-      const outputJsonPath = path.join('./output', 'json', fileName + '.json');
-
-      // ensure the output directory exists
-      fs.mkdirSync(path.dirname(outputJsonPath), { recursive: true });
-      fs.writeFileSync(outputJsonPath, JSON.stringify(data, null, 2));
+    // loop through each index and fetch the market movers
+    for (const index of indexes) {
+      await this.marketMoverService.get(index.symbol);
     }
   };
 
@@ -678,275 +638,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getIndexGainersAndLosers(symbol: string): Promise<MarketMovers> {
-    // get settings from the database
-    const settingsRepository = this.dataSource.getRepository(Setting);
-    const settings = await settingsRepository.find();
-
-    let marketMovers = null;
-
-    marketMovers = await this.getIndexGainersAndLosersFromFile(symbol);
-
-    return marketMovers;
-  }
-
-  async getIndexGainersAndLosersPlaywright(
-    symbol: string,
-  ): Promise<MarketMovers> {
-    // check if the index is valid
-    const indexRepository = this.dataSource.getRepository(Index);
-    const index = await indexRepository.findOne({
-      where: { symbol: symbol },
-    });
-
-    if (!index) {
-      throw new Error(`Index ${index} not found in the database.`);
-    }
-
-    // fetch the market movers from investing.com
-    const url = `https://za.investing.com/indices/${index.investingUrlName}`;
-
-    const browser = await getBrowser();
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    const content = await page.content();
-    await page.close();
-
-    // sleep for 1.5 seconds to avoid hitting the API too quickly
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // save the content to a file for debugging purposes
-    const outputPath = path.join(
-      './output',
-      `${index.symbol.replaceAll('^', '')}-gainers-and-losers-playwright.html`,
-    );
-    fs.writeFileSync(outputPath, content, 'utf-8');
-
-    // load the content into cheerio
-    const $ = cheerio.load(content);
-
-    // extract json from script id="__NEXT_DATA__" tag
-    const json = $('#__NEXT_DATA__').text();
-
-    // parse the json and get the data from the props object
-    const data = JSON.parse(json);
-
-    const gainers = getGainers(data);
-    const losers = getLosers(data);
-
-    // return the GainersAndLosers object
-    return {
-      gainers: gainers,
-      losers: losers,
-    };
-  }
-
-  async getIndexGainersAndLosersFromFile(
-    symbol: string,
-  ): Promise<MarketMovers> {
-    // check if the index is valid
-    const indexRepository = this.dataSource.getRepository(Index);
-    const index = await indexRepository.findOne({
-      where: { symbol: symbol },
-    });
-
-    if (!index) {
-      throw new Error(`Index ${index} not found in the database.`);
-    }
-
-    const indexJsonFileName = path.join(
-      './output',
-      'json',
-      `investing-com-${index.symbol.replaceAll('^', '')}.json`,
-    );
-
-    const json = fs.readFileSync(indexJsonFileName, 'utf-8');
-
-    const data = JSON.parse(json);
-
-    // extract the stocks from the data
-    const gainers = getGainers(data);
-    const losers = getLosers(data);
-
-    // return the GainersAndLosers object
-    return {
-      gainers: gainers,
-      losers: losers,
-    };
-  }
-
-  async getIndexGainersAndLosersBrowserless(
-    symbol: string,
-  ): Promise<MarketMovers> {
-    // check if the index is valid
-    const indexRepository = this.dataSource.getRepository(Index);
-    const index = await indexRepository.findOne({
-      where: { symbol: symbol },
-    });
-
-    if (!index) {
-      throw new Error(`Index ${index} not found in the database.`);
-    }
-
-    // fetch the market movers from investing.com
-    const endpoint =
-      process.env.BROWSERLESS_ENDPOINT ||
-      'https://production-sfo.browserless.io/chromium/bql';
-    const token = process.env.BROWSERLESS_API_KEY;
-    if (!token) {
-      throw new Error('BROWSERLESS_API_KEY environment variable is not set.');
-    }
-    const url = `https://za.investing.com/indices/${index.investingUrlName}`;
-
-    const proxyString = '&proxy=residential&proxyCountry=us';
-    const optionsString =
-      '&humanlike=true&adBlock=true&blockConsentModals=true';
-    const browserlessUrl = `${endpoint}?token=${token}${proxyString}${optionsString}`;
-
-    const response = await fetch(browserlessUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: `
-      mutation GetContent($url: String!) {
-
-        # to save bandwidth, you can use this reject function
-        reject(type: [image, media, font, stylesheet]) {
-            enabled
-            time
-        }      
-
-        goto(url: $url, waitUntil: firstContentfulPaint) {
-            status
-        }
-
-        # export cleaned HTML with numerous options
-        html(clean: {
-            # removeNonTextNodes: true
-        }) {
-            html
-        }
-      }
-      `,
-        variables: {
-          url: url,
-        },
-      }),
-    });
-
-    const responseJson = await response.json();
-
-    // save the content to a file for debugging purposes
-    const outputPath = path.join(
-      './output',
-      `${index.symbol.replaceAll('^', '')}-gainers-and-losers-browserless.json`,
-    );
-    fs.writeFileSync(outputPath, JSON.stringify(responseJson, null, 2), 'utf8');
-
-    const htmlContent = responseJson.data.html.html;
-
-    //const gainers = parseTable(htmlContent, '[data-test="gainers-table"]');
-    //const losers = parseTable(htmlContent, '[data-test="losers-table"]');
-
-    const marketMovers: MarketMovers = {
-      gainers: [],
-      losers: [],
-    };
-
-    // return the GainersAndLosers object
-    return marketMovers;
-  }
-
-  // create function 'getIndexMarketMovers' to get market-movers for each index
-  async getIndexMarketMovers(): Promise<void> {
-    // get all indexes from the database
-    const indexes = await this.dataSource
-      .getRepository(Index)
-      .createQueryBuilder('index')
-      .getMany();
-
-    // loop through each index and fetch the market movers
-    for (const index of indexes) {
-      // check if the index has any market movers
-      const marketMoverRepository =
-        this.dataSource.getRepository(MarketMoverEntity);
-      const existingMarketMovers = await marketMoverRepository.findOne({
-        where: { symbol: index.symbol },
-      });
-
-      let refetch = false;
-
-      // check if there are existing market movers
-      // if there are existing market movers, skip fetching them
-      // also check if the created date is not older than 4 hours, otherwise refetch the market movers
-      if (existingMarketMovers) {
-        const lastCreated = new Date(existingMarketMovers.created);
-        const now = new Date();
-        const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-
-        // if the last created date is older than 4 hours, refetch the market movers
-        if (lastCreated < fourHoursAgo) {
-          refetch = true;
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `Market movers for index ${index.symbol} are older than 4 hours. Refetching.`,
-            context: 'getIndexMarketMovers',
-          });
-        } else {
-          this.dataSource.getRepository(LogEntry).save({
-            level: 'info',
-            message: `Market movers for index ${index.symbol} already exist and are up to date. Skipping.`,
-            context: 'getIndexMarketMovers',
-          });
-        }
-      } else {
-        refetch = true;
-        this.dataSource.getRepository(LogEntry).save({
-          level: 'info',
-          message: `No market movers found for index ${index.symbol}. Fetching new data.`,
-          context: 'getIndexMarketMovers',
-        });
-      }
-
-      if (refetch) {
-        const gainersAndLosers = await this.getIndexGainersAndLosers(
-          index.symbol,
-        );
-
-        // delete all existing market movers for this index
-        await marketMoverRepository.delete({ symbol: index.symbol });
-
-        // save the market movers to the database
-        // save the GainersAndLosers to the json field of the MarketMover entity
-        const marketMover = new MarketMoverEntity();
-        marketMover.symbol = index.symbol;
-        marketMover.json = JSON.stringify(gainersAndLosers);
-        marketMover.created = new Date().getTime();
-        await marketMoverRepository.save(marketMover);
-      }
-    }
-
-    return; // Return void
-  }
-
-  // function to get news for a specific index
-  async getIndexNews(): Promise<void> {
-    // get all indexes from the database
-    const indexes = await this.dataSource
-      .getRepository(Index)
-      .createQueryBuilder('index')
-      .getMany();
-
-    // loop through each index and fetch the news from news table
-    // const results = await yahooFinance.search(params.symbol);
-    for (const index of indexes) {
-      // await this.newsModule.checkForUpdate(index.symbol);
-      //await this.newsModule.updateEntities(index.symbol);
-    }
-  }
-
   // Utility function to clean up LogEntry table, keeping only the last 100 entries
   async cleanupLogEntries(): Promise<void> {
     const logRepo = this.dataSource.getRepository(LogEntry);
@@ -973,18 +664,25 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    await getBrowser();
-
-    // create output directory if it doesn't exist
-    const outputDir = path.join('./output');
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
+    // save settings to the database
     await this.initializeSettingsData();
+
+    // save indexes to the database
     await this.initializeIndexData();
-    await this.downloadInvestingPages();
+
+    // save stocks to the database
     await this.initializeIndexStockData();
+
+    // save ETFs to the database
     await this.initializeEtfData();
+
+    // market-mover update
+    await this.updateMarketMovers();
+
+    // news update
+    await this.updateNews();
+
+    // initialize the cron jobs
     await this.initializeCronJobs();
   }
 

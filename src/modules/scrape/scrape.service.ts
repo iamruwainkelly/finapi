@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getBrowser } from 'src/helpers/browser.singleton';
 import { getByPath, setByPath } from 'dot-path-value';
+import { boolify } from 'src/utils/helpers';
 @Injectable()
 export class ScrapeService {
   constructor(private configService: ConfigService) {}
@@ -33,9 +34,6 @@ export class ScrapeService {
       'FINAPI_CLOUD_SCRAPING_USE_BROWSERLESS',
     );
 
-    console.log(`Using Browserless: ${useBrowserless}`);
-    console.log(`Using Browserless: ${boolify(useBrowserless)}`);
-
     let body = {};
     let htmlJsonPath = '';
     // set up post body based on useBrowserless
@@ -59,9 +57,6 @@ export class ScrapeService {
       htmlJsonPath = 'html';
     }
 
-    console.log(`Scraping URL: ${endpointUrl}`);
-    console.log(`Request body: ${JSON.stringify(body, null, 2)}`);
-
     const response = await fetch(endpointUrl, {
       method: 'POST',
       headers: {
@@ -73,13 +68,9 @@ export class ScrapeService {
     const responseJson = await response.json();
 
     // write response to file for debugging
-    const outputHtmlPath = path.join('output', 'output.json');
-    fs.mkdirSync(path.dirname(outputHtmlPath), { recursive: true });
-    fs.writeFileSync(
-      outputHtmlPath,
-      JSON.stringify(responseJson, null, 2),
-      'utf-8',
-    );
+    // const outputHtmlPath = path.join('output', 'output.json');
+    // fs.mkdirSync(path.dirname(outputHtmlPath), { recursive: true });
+    // fs.writeFileSync(outputHtmlPath, responseJson, 'utf-8');
 
     const html = getByPath(responseJson, htmlJsonPath);
 
@@ -98,13 +89,3 @@ export class ScrapeService {
     return content;
   };
 }
-
-const boolify = (value: string | boolean | undefined): boolean => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  if (typeof value === 'string') {
-    return value.toLowerCase() === 'true';
-  }
-  return false;
-};
