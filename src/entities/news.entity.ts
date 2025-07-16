@@ -5,7 +5,7 @@ import { Entity, Column } from 'typeorm';
 
 @Entity()
 export class News extends DatabaseModel implements NewsModel {
-  @Column({ unique: true })
+  @Column()
   symbol: string;
 
   @Column()

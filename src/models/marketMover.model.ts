@@ -3,7 +3,7 @@ export interface MarketMoverModel {
   index: string;
   json?: string;
   name: string;
-  price: string;
-  priceChange: string;
-  percentChange: string;
+  price: number;
+  priceChange: number;
+  priceChangePercent: number;
 }

@@ -1,4 +1,4 @@
-import path from 'node:path';
+import * as path from 'node:path';
 
 const downloadsFolder = path.join('downloads');
 const dataSourcesFolder = path.join(downloadsFolder, 'datasources');

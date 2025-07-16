@@ -14,6 +14,7 @@ import { ScrapeService } from './modules/scrape/scrape.service';
 import { ConfigModule } from '@nestjs/config';
 import { AppDataSource } from './data-source';
 import { MarketMoverService } from './modules/market-mover/market-mover.service';
+import { MarketMover } from './entities/marketMover.entity';
 
 @Module({
   imports: [
@@ -24,19 +25,21 @@ import { MarketMoverService } from './modules/market-mover/market-mover.service'
       ttl: 60 * 15 * 1000,
     }),
     TypeOrmModule.forRoot(AppDataSource.options),
-    TypeOrmModule.forFeature([News, Index]),
+    TypeOrmModule.forFeature([News, Index, MarketMover]),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
   ],
   controllers: [AppController],
   providers: [
+    // modules
     AppService,
-    HistoryModule,
-    QuoteModule,
+    MarketMoverService,
     NewsService,
     ScrapeService,
-    MarketMoverService,
+    // services
+    HistoryModule,
+    QuoteModule,
   ],
 })
 export class AppModule {

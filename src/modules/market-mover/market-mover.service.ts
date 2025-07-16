@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { differenceInHours } from 'date-fns';
-import path from 'node:path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { ScrapeService } from 'src/modules/scrape/scrape.service';
 import { boolify } from 'src/utils/helpers';
 import { MoreThan, Repository } from 'typeorm';
@@ -10,6 +11,8 @@ import { Index } from 'src/entities/index.entity';
 import { getMarketMoverDatasourceFullFilePath } from 'src/constants';
 import { MarketMover } from 'src/entities/marketMover.entity';
 import { MarketMoverModel } from 'src/models/marketMover.model';
+import * as cheerio from 'cheerio';
+import currencyToFloat from 'currency-to-float';
 
 @Injectable()
 export class MarketMoverService {
@@ -17,12 +20,13 @@ export class MarketMoverService {
   constructor(
     @InjectRepository(Index)
     private indexRepository: Repository<Index>,
+    @InjectRepository(MarketMover)
     private readonly marketMoverRepository: Repository<MarketMover>,
     private readonly configService: ConfigService,
     private readonly scrapeService: ScrapeService,
   ) {}
 
-  parseTable = ($: any, headerText: string) => {
+  parseTableX = ($: any, headerText: string) => {
     const result: MarketMoverModel[] = [];
     // Find the h2 with the headerText, then the next table
     $('h2').each((_: any, el: any) => {
@@ -34,7 +38,7 @@ export class MarketMoverService {
           const name = tds.eq(0).find('div').eq(1).text().trim();
           const price = tds.eq(1).find('span').eq(0).text().trim();
           const priceChange = tds.eq(1).find('span').eq(1).text().trim();
-          const percentChange = tds.eq(1).find('span').eq(2).text().trim();
+          const priceChangePercent = tds.eq(1).find('span').eq(2).text().trim();
 
           const item: MarketMoverModel = {
             symbol,
@@ -42,7 +46,7 @@ export class MarketMoverService {
             name,
             price,
             priceChange,
-            percentChange,
+            priceChangePercent,
           };
 
           result.push(item);
@@ -51,6 +55,52 @@ export class MarketMoverService {
     });
     return result;
   };
+
+  parseTable($: any, tableSelector: string) {
+    const result: MarketMoverModel[] = [];
+    $(tableSelector)
+      .find('tbody tr')
+      .each((_: any, row: any) => {
+        const td = $(row).find('td');
+        const a = td.eq(0).find('a');
+        const symbol = a.find('span').eq(1).text().trim();
+        const name = a
+          .find('div[data-test="gainers-losers-label"]')
+          .text()
+          .trim();
+        const price = td
+          .eq(1)
+          .find('span[data-test="gainers-losers-last"]')
+          .text()
+          .trim();
+        const priceChange = td
+          .eq(1)
+          .find('span[data-test="gainers-losers-change"] > span')
+          .eq(0)
+          .text()
+          .trim();
+
+        const priceChangePercent = td
+          .eq(1)
+          .find('span[data-test="gainers-losers-change"] > span')
+          .eq(1)
+          .text()
+          .trim()
+          // Remove the percent sign
+          .replace('%', '');
+
+        const item: MarketMoverModel = {
+          index: '',
+          symbol,
+          name,
+          price: currencyToFloat(price),
+          priceChange,
+          priceChangePercent,
+        };
+        result.push(item);
+      });
+    return result;
+  }
 
   async downloadSource(symbol: string) {
     // get the index from the database
@@ -113,8 +163,8 @@ export class MarketMoverService {
     const $ = cheerio.load(content);
 
     // extract articles
-    const gainers = this.parseTable($, 'Top Gainers');
-    const losers = this.parseTable($, 'Top Losers');
+    const gainers = this.parseTable($, '[data-test="gainers-table"] table');
+    const losers = this.parseTable($, '[data-test="losers-table"] table');
 
     // set index field
     gainers.forEach((item) => (item.index = index.symbol));
@@ -125,6 +175,9 @@ export class MarketMoverService {
 
   get = async (marketIndex: string): Promise<MarketMover[]> => {
     const now = new Date();
+
+    // capilize the marketIndex
+    marketIndex = marketIndex.toUpperCase();
 
     // get items from the database
     // where nothing is older than 6 hours
@@ -154,7 +207,7 @@ export class MarketMoverService {
         marketMover.name = item.name;
         marketMover.price = item.price;
         marketMover.priceChange = item.priceChange;
-        marketMover.percentChange = item.percentChange;
+        marketMover.priceChangePercent = item.priceChangePercent;
         marketMover.created = now.getTime();
         marketMover.createdString = now.toISOString();
         marketMover.updated = now.getTime();

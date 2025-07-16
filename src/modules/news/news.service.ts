@@ -136,7 +136,6 @@ export class NewsService {
     private indexRepository: Repository<Index>,
     @InjectRepository(News)
     private newsRepository: Repository<News>,
-    private appService: AppService,
     private configService: ConfigService,
     private scrapeService: ScrapeService,
   ) {}
@@ -272,7 +271,9 @@ export class NewsService {
         news.date = item.date;
         news.provider = item.provider;
         news.created = now.getTime();
+        news.createdString = now.toISOString();
         news.updated = now.getTime();
+        news.updatedString = now.toISOString();
         return news;
       });
 

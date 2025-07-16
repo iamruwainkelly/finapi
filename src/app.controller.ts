@@ -43,6 +43,7 @@ import { newPage } from './helpers/browser.singleton';
 // import cheerio
 import * as cheerio from 'cheerio';
 import { analysis } from './helpers/modules/risk';
+import { MarketMoverService } from './modules/market-mover/market-mover.service';
 
 interface PeerResult {
   symbol: string;
@@ -90,12 +91,6 @@ const userAgents = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
 ];
 
-const contextOptions = {
-  viewport: { width: 1280, height: 800 },
-  userAgent: userAgents[Math.floor(Math.random() * userAgents.length)],
-  deviceScaleFactor: 1,
-};
-
 @Controller('api/')
 export class AppController {
   constructor(
@@ -104,6 +99,7 @@ export class AppController {
     private historyModule: HistoryModule,
     private quoteModule: QuoteModule,
     private newsService: NewsService,
+    private marketMoverService: MarketMoverService,
   ) {}
 
   // **********************************
@@ -659,45 +655,19 @@ export class AppController {
   @Get('market-movers/:symbol')
   // @Param('symbol') symbol: string,
   async marketMovers(@Param('symbol') symbol: string): Promise<object> {
-    // get the index from the indexes array
-    const indexEntry = indexes.find(
-      (index) => index.yahooFinanceSymbol === symbol.toUpperCase(),
-    );
+    const marketMovers = await this.marketMoverService.get(symbol);
 
-    // if the index is not found, return an error
-    if (!indexEntry) {
-      return {
-        error:
-          'Index not found. Index should be one of the following: ^GSPC, ^IXIC, ^STOXX50E, ^SSMI',
-      };
-    }
+    // get gainers and losers
+    // also sort by price change
+    const gainers = marketMovers.filter((m) => m.priceChange > 0);
+    const losers = marketMovers.filter((m) => m.priceChange < 0);
 
-    // get the index from the database
-    // return the json from the database if it exists
-    const marketMovers = await this.dataSource
-      .getRepository(MarketMover)
-      .createQueryBuilder('marketMover')
-      .where('marketMover.symbol = :symbol', {
-        symbol: indexEntry.yahooFinanceSymbol,
-      })
-      .getOne();
+    gainers.sort((a, b) => b.priceChange - a.priceChange);
+    losers.sort((a, b) => a.priceChange - b.priceChange);
 
-    // return the json from the database
-    // if the marketMovers is not found, return empty 'GainersAndLosers' object
-    if (!marketMovers) {
-      return {
-        gainers: [],
-        losers: [],
-      };
-    }
-
-    // if the marketMovers is found, return the json
-    const marketMoversJson = JSON.parse(marketMovers.json);
-
-    // return the json as GainersAndLosers object
     return {
-      gainers: marketMoversJson.gainers,
-      losers: marketMoversJson.losers,
+      gainers,
+      losers,
     };
   }
 

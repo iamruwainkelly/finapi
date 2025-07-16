@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import { getBrowser } from 'src/helpers/browser.singleton';
 import { getByPath, setByPath } from 'dot-path-value';
 import { boolify } from 'src/utils/helpers';
+
 @Injectable()
 export class ScrapeService {
   constructor(private configService: ConfigService) {}

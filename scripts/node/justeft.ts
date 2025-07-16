@@ -2,7 +2,7 @@
 // this script returns the isin codes
 import axios from 'axios';
 import fs from 'fs';
-import path from 'path';
+import * as path from 'node:path';
 
 // get dirname of this file
 

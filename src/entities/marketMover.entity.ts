@@ -10,18 +10,18 @@ export class MarketMover extends DatabaseModel implements MarketMoverModel {
   @Column()
   index: string;
 
-  @Column()
+  @Column({ nullable: true })
   json: string;
 
   @Column()
   name: string;
 
-  @Column()
-  price: string;
+  @Column({ type: 'decimal' })
+  price: number;
 
-  @Column()
-  priceChange: string;
+  @Column({ type: 'decimal' })
+  priceChange: number;
 
-  @Column()
-  percentChange: string;
+  @Column({ type: 'decimal' })
+  priceChangePercent: number;
 }
