@@ -13,6 +13,7 @@ import { MarketMover } from 'src/entities/marketMover.entity';
 import { MarketMoverModel } from 'src/models/marketMover.model';
 import * as cheerio from 'cheerio';
 import currencyToFloat from 'currency-to-float';
+import { re } from 'mathjs';
 
 @Injectable()
 export class MarketMoverService {
@@ -102,6 +103,22 @@ export class MarketMoverService {
     return result;
   }
 
+  // fn to read filepath content and see if the file contains text "aiting for za.investing.com to respond"
+  // if it does, download the source again
+  async checkAndDownloadSource(symbol: string) {
+    const fullFilePath = getMarketMoverDatasourceFullFilePath(symbol);
+
+    if (fs.existsSync(fullFilePath)) {
+      const content = fs.readFileSync(fullFilePath, 'utf-8');
+      if (content.includes('Waiting for za.investing.com to respond')) {
+        console.log(
+          `File ${fullFilePath} contains error message. Downloading source again.`,
+        );
+        return await this.downloadSource(symbol);
+      }
+    }
+  }
+
   async downloadSource(symbol: string) {
     // get the index from the database
     const index =
@@ -112,6 +129,18 @@ export class MarketMoverService {
     const fullFilePath = getMarketMoverDatasourceFullFilePath(index.symbol);
 
     if (fs.existsSync(fullFilePath)) {
+      // check error message in file
+      const content = fs.readFileSync(fullFilePath, 'utf-8');
+      if (content.includes('Waiting for za.investing.com to respond')) {
+        console.log(
+          `File ${fullFilePath} contains error message. Downloading source again.`,
+        );
+        fs.unlinkSync(fullFilePath); // delete the file
+        await this.downloadSource(symbol);
+        return fullFilePath; // return the file path after downloading
+      }
+
+      // check if the file is less than 6 hours old
       const stats = fs.statSync(fullFilePath);
       const fileAgeInHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
       if (fileAgeInHours < 6) {
@@ -155,9 +184,13 @@ export class MarketMoverService {
       (await this.indexRepository.findOne({ where: { symbol: symbol } })) ||
       new Index();
 
+    console.log(`Extracting market movers for index: ${index.symbol}`);
+
     // get file timestamp and only continue if news is older than 6 hours
     const filepath = getMarketMoverDatasourceFullFilePath(index.symbol);
     const content = fs.readFileSync(filepath, 'utf-8');
+
+    console.log(filepath);
 
     // load the content into cheerio
     const $ = cheerio.load(content);
@@ -165,6 +198,8 @@ export class MarketMoverService {
     // extract articles
     const gainers = this.parseTable($, '[data-test="gainers-table"] table');
     const losers = this.parseTable($, '[data-test="losers-table"] table');
+
+    console.log(`Found ${gainers.length} gainers and ${losers.length} losers.`);
 
     // set index field
     gainers.forEach((item) => (item.index = index.symbol));
@@ -196,7 +231,12 @@ export class MarketMoverService {
       );
 
       await this.downloadSource(marketIndex);
+      await this.checkAndDownloadSource(marketIndex);
       const modelItems = await this.extractFromSource(marketIndex);
+
+      console.log(
+        `Found ${modelItems.length} items for index: ${marketIndex}.`,
+      );
 
       // save the items to the database
       const entities = modelItems.map((item) => {
@@ -225,6 +265,8 @@ export class MarketMoverService {
         where: { index: marketIndex, created: MoreThan(timeThreshold) },
       });
     }
+
+    console.log(`Found ${entityItems.length} items for index: ${marketIndex}.`);
 
     return entityItems;
   };
