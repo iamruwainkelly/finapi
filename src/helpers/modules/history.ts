@@ -1,8 +1,8 @@
-import { History } from "../../entities/history.entity";
-import yahooFinance from "yahoo-finance2";
-import { AppDataSource } from "../../data-source";
-import { isToday, toDate } from "date-fns";
-import { HistoryMinimal, HistoryWeb } from "src/typings/History";
+import { History } from '../../entities/history.entity';
+import yahooFinance from 'yahoo-finance2';
+import { AppDataSource } from '../../data-source';
+import { isToday, toDate } from 'date-fns';
+import { HistoryMinimal, HistoryWeb } from 'src/typings/History';
 
 export class HistoryModule {
   constructor() {}
@@ -16,7 +16,7 @@ export class HistoryModule {
     const result = await yahooFinance.chart(symbol, {
       period1: startDate,
       period2: today,
-      interval: "1d",
+      interval: '1d',
     });
 
     return result.quotes
@@ -41,8 +41,8 @@ export class HistoryModule {
 
   convertToWeb = (history: History[]): HistoryWeb[] => {
     return history.map((entry) => ({
-      date: new Date(entry.date).toISOString().split("T")[0], // Format date as YYYY-MM-DD
-      close: entry.close ?? 0,
+      date: new Date(entry.date).toISOString().split('T')[0], // Format date as YYYY-MM-DD
+      close: entry.close ?? null,
     }));
   };
 
@@ -66,9 +66,9 @@ export class HistoryModule {
 
     // Query the database for the symbol
     const history = await AppDataSource.getRepository(History)
-      .createQueryBuilder("history")
-      .where("history.symbol = :symbol", { symbol })
-      .orderBy("history.date", "ASC")
+      .createQueryBuilder('history')
+      .where('history.symbol = :symbol', { symbol })
+      .orderBy('history.date', 'ASC')
       .getMany();
 
     // get current date and time in getTime format
@@ -101,7 +101,7 @@ export class HistoryModule {
       const historyEntry = new History();
       historyEntry.symbol = symbol;
       historyEntry.date = entry.date.getTime(); // Convert date to timestamp
-      historyEntry.dateString = entry.date.toISOString().split("T")[0]; // Format date as YYYY-MM-DD
+      historyEntry.dateString = entry.date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
       historyEntry.close = entry.close;
       historyEntry.open = entry.open;
       historyEntry.high = entry.high;
@@ -120,9 +120,9 @@ export class HistoryModule {
 
     // Return the newly fetched history from db
     return AppDataSource.getRepository(History)
-      .createQueryBuilder("history")
-      .where("history.symbol = :symbol", { symbol })
-      .orderBy("history.date", "ASC")
+      .createQueryBuilder('history')
+      .where('history.symbol = :symbol', { symbol })
+      .orderBy('history.date', 'ASC')
       .getMany();
   };
 }

@@ -42,6 +42,7 @@ import { ScrapeService } from './modules/scrape/scrape.service';
 import { Mover } from './typings/Mover';
 import { NewsService } from './modules/news/news.service';
 import { MarketMoverService } from './modules/market-mover/market-mover.service';
+import { boolify } from './utils/helpers';
 
 export class DatabaseLogger implements TypeOrmLogger {
   constructor(private dataSource: DataSource) {}
@@ -487,8 +488,27 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
             // skip if the symbol starts with ^
             if (etfData.symbol.startsWith('^')) continue;
 
+            // boolify env var FINAPI_CLOUD_IGNORE_EFT_NAMES_WITH_DOTS
+            // default to true if not set or undefined
+            const includeEftNamesWithDots = boolify(
+              this.configService.get<boolean>(
+                'FINAPI_INCLUDE_EFT_NAMES_WITH_DOTS',
+              ) || false,
+            );
+
+            // console.log('includeEftNamesWithDots', includeEftNamesWithDots);
+            // console.log(
+            //   "etfData.symbol.includes('.')",
+            //   etfData.symbol.includes('.'),
+            // );
+
             // skip if the symbol has a dot in it
-            if (etfData.symbol.includes('.')) continue;
+            if (!includeEftNamesWithDots && etfData.symbol.includes('.')) {
+              // console.warn(
+              //   `Skipping ETF ${etfData.symbol} because it contains a dot in the symbol.`,
+              // );
+              continue;
+            }
 
             // create a new ETF entity, same as the EtfInterface
             let etf = new Etf();

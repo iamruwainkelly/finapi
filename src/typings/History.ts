@@ -1,8 +1,8 @@
 export interface HistoryMinimal {
-    date: number;
-    close: number;
+  date: number;
+  close: number;
 }
 export interface HistoryWeb {
-    date: string;
-    close: number;
+  date: string;
+  close: number | null;
 }

@@ -53,6 +53,9 @@ export function computeMetrics(prices: number[]) {
     // (((estimatedPrice - currentPrice) / currentPrice) * 100).toFixed(2) + '%';
     ((estimatedPrice - currentPrice) / currentPrice) * 100;
 
+  // set estimated price
+  metrics.estimatedPrice = estimatedPrice;
+
   // 01 June 2025
   // Commented out. Use value as a number without the '%' sign
   // metrics.confidence = confidence.toFixed(1) + '%';

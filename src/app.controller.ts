@@ -187,8 +187,8 @@ export class AppController {
     if (!filtered.length) {
       console.log(`No historical data found for the given date`);
       return {
-        change: 0,
-        changePercent: 0,
+        change: null,
+        changePercent: null,
       };
     }
 
@@ -197,8 +197,18 @@ export class AppController {
 
     if (first == null || last == null) {
       return {
-        change: 0,
-        changePercent: 0,
+        change: null,
+        changePercent: null,
+      };
+    }
+
+    // make sure first and last are the not same date
+    // store bool in cvar
+    const isSameDate = new Date(first).getTime() === new Date(last).getTime();
+    if (isSameDate) {
+      return {
+        change: null,
+        changePercent: null,
       };
     }
 
@@ -401,58 +411,6 @@ export class AppController {
       volumeAverageRatio: volumeAverageRatio,
       rsi14: rsi14,
       riskAnalysis: riskAnalysis,
-      riskFactorExposures: [
-        {
-          name: 'Market',
-          value: 65,
-        },
-        {
-          name: 'Size',
-          value: 12,
-        },
-        {
-          name: 'Value',
-          value: 8,
-        },
-        {
-          name: 'Momentum',
-          value: 25,
-        },
-        {
-          name: 'Quality',
-          value: 5,
-        },
-        {
-          name: 'Volatility',
-          value: 18,
-        },
-      ],
-      riskFactorContribution: [
-        {
-          name: 'Market',
-          value: 65,
-        },
-        {
-          name: 'Size',
-          value: 12,
-        },
-        {
-          name: 'Value',
-          value: 8,
-        },
-        {
-          name: 'Momentum',
-          value: 25,
-        },
-        {
-          name: 'Quality',
-          value: 5,
-        },
-        {
-          name: 'Volatility',
-          value: 18,
-        },
-      ],
       riskMetrics: {
         correlation: 0.78,
         valueAtRisk: -4.32,
@@ -574,7 +532,7 @@ export class AppController {
 
     // todo
     const ytdData = {
-      change: 0, // Placeholder, replace with actual YTD calculation
+      change: null as number | null, // Placeholder, replace with actual YTD calculation
       changePercent: 0, // Placeholder, replace with actual YTD calculation
     };
 
@@ -582,7 +540,7 @@ export class AppController {
     const ytdStart = new Date();
     ytdStart.setMonth(0, 1);
     const ytdPerformance = await this.calculatePerformance(history, ytdStart);
-    ytdData.change = ytdPerformance.change || 0;
+    ytdData.change = ytdPerformance.change;
     ytdData.changePercent = ytdPerformance.changePercent || 0;
 
     const performance: PerformanceTimeFrames = {
@@ -979,16 +937,14 @@ export class AppController {
       (entry) => entry.date > oneYearAgo.getTime(),
     );
     if (lastYearHistory.length === 0) {
-      throw new Error(
-        `No history found for symbol ${symbol} in the last year.`,
-      );
+      console.warn(`No history found for symbol ${symbol} in the last year.`);
     }
 
     // get the performance for the symbol
     const performance = await this.performance(symbol);
 
     if (!performance) {
-      throw new Error(`Performance for symbol ${symbol} not found.`);
+      console.warn(`Performance for symbol ${symbol} not found.`);
     }
 
     // get etf from the database

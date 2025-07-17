@@ -1,6 +1,6 @@
 export interface ChangeAndChangePercent {
-  change: number | undefined;
-  changePercent: number | undefined;
+  change: number | null;
+  changePercent: number | undefined | null;
 }
 
 export interface PerformanceTimeFrames {
