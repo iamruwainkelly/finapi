@@ -15,6 +15,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppDataSource } from './data-source';
 import { MarketMoverService } from './modules/market-mover/market-mover.service';
 import { MarketMover } from './entities/marketMover.entity';
+import { HelloController } from './modules/hello/hello.controller';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { MarketMover } from './entities/marketMover.entity';
       isGlobal: true,
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, HelloController],
   providers: [
     // modules
     AppService,

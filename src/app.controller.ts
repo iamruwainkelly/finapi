@@ -52,45 +52,6 @@ interface PeerResult {
   history: HistoryMinimal[];
 }
 
-// create a function to calculate the change in price between two dates
-// and return the change in price and the change in percent
-const calculateChange = (currentPrice: number, previousPrice: number) => {
-  const change = currentPrice - previousPrice;
-  const changePercent = (change / previousPrice) * 100;
-
-  return { change, changePercent };
-};
-
-const indexes = [
-  {
-    yahooFinanceSymbol: '^GSPC',
-    investingSymbol: 'SPX',
-    investingUrlName: 'us-spx-500',
-  },
-  {
-    yahooFinanceSymbol: '^IXIC',
-    investingSymbol: 'IXIC',
-    investingUrlName: 'nasdaq-composite',
-  },
-  {
-    yahooFinanceSymbol: '^STOXX50E',
-    investingSymbol: 'STOXX50E',
-    investingUrlName: 'eu-stoxx50',
-  },
-  {
-    yahooFinanceSymbol: '^SSMI',
-    investingSymbol: 'SMI',
-    investingUrlName: 'switzerland-20',
-  },
-];
-
-// create an array of user agents
-const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-  'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-];
-
 @Controller('api/')
 export class AppController {
   constructor(
