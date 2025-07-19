@@ -732,6 +732,7 @@ export class AppController {
       // return the dashboard object for the index
       return {
         symbol: index.symbol,
+        friendlyName: index.friendlyName,
         quote: quote,
         performance: performance,
         news: news,
@@ -747,26 +748,41 @@ export class AppController {
     return dashboardResults;
   }
 
-  @Get('dashboard2/:index')
+  @Get('dashboard/:index')
   async dashboard2(@Param('index') index: string): Promise<object> {
+    // get index
+    const indexEntity = await this.dataSource
+      .getRepository(Index)
+      .createQueryBuilder('index')
+      .where('index.symbol = :symbol', { symbol: index.toUpperCase() })
+      .getOne();
+
+    // if the index does not exist, return an error
+    if (!indexEntity) {
+      return {
+        error: `Index ${index} not found.`,
+      };
+    }
+
     // get the quote for the index
-    const quote = await this.quoteModule.quote(index);
+    const quote = await this.quoteModule.quote(indexEntity.symbol);
 
     // get the history for the index
-    const performance = await this.getIndexPerformance(index);
+    const performance = await this.getIndexPerformance(indexEntity.symbol);
 
     //get the news results for the index
-    const news = await this.news(index);
+    const news = await this.news(indexEntity.symbol);
 
     // get the market movers for the index
-    const marketMovers = await this.marketMovers(index);
+    const marketMovers = await this.marketMovers(indexEntity.symbol);
 
     // forecast the index
-    const forecast = await this.forecast('', index);
+    const forecast = await this.forecast('', indexEntity.symbol);
 
     // return the dashboard object for the index
     return {
-      symbol: index.toUpperCase(),
+      symbol: indexEntity.symbol.toUpperCase(),
+      friendlyName: indexEntity.friendlyName,
       quote: quote,
       performance: performance,
       news: news,

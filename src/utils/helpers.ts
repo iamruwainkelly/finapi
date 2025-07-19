@@ -8,3 +8,10 @@ export const boolify = (value: any): boolean => {
   }
   return Boolean(value);
 };
+
+// fn to log text, but include the current method name automatically
+// add timestamp to the log
+export const l = (file: string, method: string, text: string) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [${file}][${method}] ${text}`);
+};

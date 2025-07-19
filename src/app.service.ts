@@ -324,6 +324,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       index.symbol = data.yahooFinanceSymbol;
       index.investingSymbol = data.investingSymbol;
       index.investingUrlName = data.investingUrlName;
+      index.friendlyName = data.friendlyName;
       index.reutersNewsUrl = data.reutersNewsUrl;
       index.created = new Date().getTime();
 

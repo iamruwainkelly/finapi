@@ -3,6 +3,7 @@
     "yahooFinanceSymbol": "^GSPC",
     "investingSymbol": "SPX",
     "investingUrlName": "us-spx-500",
+    "friendlyName": "S&P 500",
     "reutersNewsUrl": "https://www.reuters.com/markets/quote/.SPX",
     "stockConfig": {
       "sourceUrl": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/refs/heads/main/data/constituents.csv",
@@ -15,6 +16,7 @@
     "yahooFinanceSymbol": "^IXIC",
     "investingSymbol": "IXIC",
     "investingUrlName": "nasdaq-composite",
+    "friendlyName": "NASDAQ",
     "reutersNewsUrl": "https://www.reuters.com/markets/quote/.IXIC",
     "stockConfig": {
       "sourceUrl": "https://raw.githubusercontent.com/datasets/nasdaq-listings/refs/heads/main/data/nasdaq-listed-symbols.csv",
@@ -27,6 +29,7 @@
     "yahooFinanceSymbol": "^STOXX50E",
     "investingSymbol": "STOXX50E",
     "investingUrlName": "eu-stoxx50",
+    "friendlyName": "EURO STOXX 50",
     "reutersNewsUrl": "https://www.reuters.com/markets/quote/.STOXX50E",
     "stockConfig": {
       "sourceUrl": "https://en.wikipedia.org/wiki/EURO_STOXX_50",
@@ -40,6 +43,7 @@
     "yahooFinanceSymbol": "^SSMI",
     "investingSymbol": "SMI",
     "investingUrlName": "switzerland-20",
+    "friendlyName": "Swiss Market Index",
     "reutersNewsUrl": "https://www.reuters.com/markets/quote/.SSMI",
     "stockConfig": {
       "sourceUrl": "https://en.wikipedia.org/wiki/Swiss_Market_Index",

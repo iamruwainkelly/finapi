@@ -5,7 +5,7 @@ import { differenceInHours } from 'date-fns';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { ScrapeService } from 'src/modules/scrape/scrape.service';
-import { boolify } from 'src/utils/helpers';
+import { boolify, l } from 'src/utils/helpers';
 import { MoreThan, Repository } from 'typeorm';
 import { Index } from 'src/entities/index.entity';
 import { getMarketMoverDatasourceFullFilePath } from 'src/constants';
@@ -13,7 +13,6 @@ import { MarketMover } from 'src/entities/marketMover.entity';
 import { MarketMoverModel } from 'src/models/marketMover.model';
 import * as cheerio from 'cheerio';
 import currencyToFloat from 'currency-to-float';
-import { re } from 'mathjs';
 
 @Injectable()
 export class MarketMoverService {
@@ -235,7 +234,7 @@ export class MarketMoverService {
       const modelItems = await this.extractFromSource(marketIndex);
 
       console.log(
-        `Found ${modelItems.length} items for index: ${marketIndex}.`,
+        `marketMover-get() - Found ${modelItems.length} items for index: ${marketIndex}.`,
       );
 
       // save the items to the database
@@ -261,12 +260,23 @@ export class MarketMoverService {
       // save new items
       await this.marketMoverRepository.save(entities);
 
+      l(
+        `src/modules/market-mover/market-mover.service.ts`,
+        `save`,
+        `a - Found ${entities.length} items for index: ${marketIndex}.`,
+      );
+
+      // returning the newly saved items
       return await this.marketMoverRepository.find({
         where: { index: marketIndex, created: MoreThan(timeThreshold) },
       });
     }
 
-    console.log(`Found ${entityItems.length} items for index: ${marketIndex}.`);
+    l(
+      `src/modules/market-mover/market-mover.service.ts`,
+      `get`,
+      `b - Found ${entityItems.length} items for index: ${marketIndex}.`,
+    );
 
     return entityItems;
   };

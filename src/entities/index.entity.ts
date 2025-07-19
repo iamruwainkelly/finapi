@@ -24,6 +24,10 @@ export class Index {
   @Column({ nullable: true })
   investingUrlName: string;
 
+  // friendlyName
+  @Column({ nullable: true })
+  friendlyName: string;
+
   // reutersNewsUrl
   @Column({ nullable: true })
   reutersNewsUrl: string;
